@@ -16,7 +16,7 @@ void traverseDir(char *);
 void makeDirectoryTree(char* dir_path, char* root, tree<Node> * dirTree, tree<Node>::pre_order_iterator it, tree<Node>::pre_order_iterator newIt);
 Node* findInodeByNum(ino_t inode_number, tree<Node> searchTree);
 Node* findNodeByName(string name, tree<Node> searchTree);
-void SyncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree);
+void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree);
 bool isDirectory(struct Node node);
 
 typedef struct Inode {

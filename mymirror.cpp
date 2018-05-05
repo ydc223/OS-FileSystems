@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     struct inotify_event *event;
     char *backup;
     char root[100];
-    char source[100];
+    char *source;
     DIR * dir_ptr;
     DIR * dest_dir_ptr;
     char* name;
@@ -39,10 +39,10 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    // source = argv[1];
-    memcpy(source, argv[1], strlen(argv[1])+1);
+    source = argv[1];
+    // memcpy(source, argv[1], strlen(argv[1])+1);
 
-    memcpy(root, source, strlen(source)+1);
+    // memcpy(root, source, strlen(source)+1);
 
     backup = argv[2];
     printf("Source %s, backup%s\n", source, backup);
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     }
     // printTree(sourceTree);
     
-    makeDirectoryTree(source, root, &sourceTree, treeIt, treeIt);
+    makeDirectoryTree(source, source, &sourceTree, treeIt, treeIt);
 
     printf("------Printing source tree-----------\n");
     printTree(sourceTree);
@@ -98,20 +98,23 @@ int main(int argc, char *argv[])
 
 
     // Finding node by name and inode number
-    // find = findInodeByNum(1310723602, sourceTree);
-    // if(find != nullptr){
-    //     // printNode(*find);
-    // }
-    // string path = find->name;
-    // // printNode(*find);
-    // // printTree(sourceTree);
-    // nameFind = findNodeByName(path, sourceTree);
-    // // printTree(sourceTree);
+    find = findInodeByNum(1310723602, sourceTree);
+    if(find != nullptr){
+        printNode(*find);
+    }
+    string path = find->name;
+    // printNode(*find);
+    // printTree(sourceTree);
+    nameFind = findNodeByName(path, sourceTree);
+    // printTree(sourceTree);
+    // printTree(sourceTree);
 
-    // if(nameFind != nullptr){
-    //     // cout<< "NAME: " << nameFind->name<<endl;
-    //     // printNode(*nameFind);
-    // }
+    if(nameFind != nullptr){
+        // cout<< "NAME: " << nameFind->name<<endl;
+        printNode(*nameFind);
+    }
+
+    syncFolders(&sourceTree, &destinationTree);
 
 
 

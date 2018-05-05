@@ -59,7 +59,7 @@ void print_tree(const tree<std::string>& tr, tree<std::string>::pre_order_iterat
 			std::cout << "  ";
 		std::cout << (*it) << std::endl << std::flush;
 		++it;
-		}
+	}
 	std::cout << "-----" << std::endl;
 	}
 

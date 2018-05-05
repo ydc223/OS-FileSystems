@@ -15,8 +15,6 @@
 using namespace std;
 
 void printTree(tree<struct Node> tr) {
-	// tree<Node>::iterator sib2=tr.begin();
-	// tree<Node>::iterator end2=tr.end();
 
 	tree<Node>::pre_order_iterator it = tr.begin();
 	tree<Node>::pre_order_iterator end = tr.end();
@@ -31,13 +29,6 @@ void printTree(tree<struct Node> tr) {
 		++it;
 	}
 	std::cout << "-----" << std::endl;
-
-	// while(sib2!=end2) {
-	// 	for(int i=0; i<tr.depth(sib2); ++i) 
-	// 		cout << " ";
-	// 	printNode(*sib2);
-	// 	++sib2;
-	// }
 }
 
 void printNode(struct Node node){
@@ -121,8 +112,8 @@ bool isDirectory(struct Node node){
 	return false;
 }
 
-char* getRelativePath(char* name, char* rootFolder){
-	char relatvePath[100];
+char* getRelativePath(const char* name, const char* rootFolder){
+	char *relatvePath = (char*)malloc(sizeof(char)*100);
 	memset(relatvePath,0,strlen(relatvePath));
 	strcpy(relatvePath, rootFolder);
 	strcat(relatvePath, "/");
@@ -136,19 +127,13 @@ void makeDirectoryTree(char* dir_path, char* root, tree<Node> * dirTree, tree<No
 	
 	struct dirent *direntp;
 	struct stat statbuf;
-	char name [100];
+	char *name = (char*)malloc(sizeof(char)*100);
 	DIR *dir_ptr;
 	struct Inode *inode;
 	struct Node node;
-	char path[100];
 	if(strcmp(dir_path, root) != 0 ){
-		memset(path,0,strlen(path));
-		strcpy(path,getRelativePath(name, root));
-		printf("Name and root %s, %s:\n", root, name);
-		cout<<"Line 142 Path: "<< path <<endl;
-		dir_ptr = opendir(path);
+		dir_ptr = opendir(getRelativePath(dir_path, root));
 	} else {
-		cout<<"Line 145 dir path, root: "<<dir_path<<" "<<root<<endl;
 		dir_ptr = opendir((dir_path, root));
 	}
     if(dir_ptr == nullptr) {
@@ -164,51 +149,29 @@ void makeDirectoryTree(char* dir_path, char* root, tree<Node> * dirTree, tree<No
 			// printf(". or ..\n");
 		} else{
 			memset(name,0,strlen(name));
-			memset(path,0,strlen(path));
+			// memset(path,0,strlen(path));
 
-			cout<< "Comparing: " << dir_path << " and "<< root<< endl;
 			if(strcmp(dir_path, root) != 0 ){
 				strcpy(name, dir_path);
 				strcat(name, "/");
 				strcat(name, direntp->d_name);
-				// strcpy(path,getRelativePath(name, root));
 				node.name = name;
 
-				cout<<"This is NOT root; name is"<<name<<endl;
 			} else{
-				// strcat(name, direntp->d_name);
-				node.name = path;
-				cout<<"This is root "<<name<<endl;
+				node.name = direntp->d_name;
 				strcat(name, direntp->d_name);
-				// strcat(name, "/");
 			}
-			printf("At the end %s %s\n", dir_path, root);
-			// printf("inode %d of the entry %s \n", \
-					(int)direntp->d_ino, name);
 			
-			
-			
-			strcpy(path, getRelativePath(name, root));
-			cout<<"Path: "<< path<<endl;
-			printf("At the end %s %s\n", dir_path, root);
+			// strcpy(path, getRelativePath(name, root));
 
-
-			if (stat(path, &(node.inode->statbuf)) == -1) { 
+			if (stat(getRelativePath(name, root), &(node.inode->statbuf)) == -1) { 
 				perror("Failed to get file status");
 				exit(1);
 			}
-			else {
-				cout<<"Name: "<<name<<endl;
-				cout<< "Inode: "<< node.inode->statbuf.st_ino<<endl;
-				// printf("inode: %d\n", node.inode->statbuf.st_ino);
-				newIt = (*dirTree).append_child(it, node);
-				if ((node.inode->statbuf.st_mode & S_IFMT) == S_IFDIR) {
-					printf("Recursing on a directory with root %s\n", root);
-					strcpy(dir_path, name);
-					printf("Recursing on a directory with name %s\n", dir_path);
 
-					makeDirectoryTree(dir_path, root, dirTree, newIt, newIt);
-				}
+			newIt = (*dirTree).append_child(it, node);
+			if (isDirectory(node)) {
+				makeDirectoryTree(name, root, dirTree, newIt, newIt);
 			}
 		}
 	}
@@ -216,12 +179,12 @@ void makeDirectoryTree(char* dir_path, char* root, tree<Node> * dirTree, tree<No
 }
 
 
-Node* findInodeByNum(ino_t inode_number, tree<Node> searchTree){
+Node* findInodeByNum(ino_t inode_number, tree<Node> searchTree) {
 	tree<Node>::pre_order_iterator it  = searchTree.begin();
 	tree<Node>::pre_order_iterator end = searchTree.end();
 
 	while(it!=end) {
-		if((*it).inode->statbuf.st_ino == inode_number){
+		if((*it).inode->statbuf.st_ino == inode_number) {
 			return (&(*it));
 		}
 		++it;
@@ -229,12 +192,12 @@ Node* findInodeByNum(ino_t inode_number, tree<Node> searchTree){
 	return nullptr;
 }
 
-Node* findNodeByName(string name, tree<Node> searchTree){
+Node* findNodeByName(string name, tree<Node> searchTree) {
 	tree<Node>::pre_order_iterator it  = searchTree.begin();
 	tree<Node>::pre_order_iterator end = searchTree.end();
 
 	while(it!=end) {
-		if(name == (*it).name){
+		if(name == (*it).name) {
 			return (&(*it));
 		}
 		++it;
@@ -244,23 +207,61 @@ Node* findNodeByName(string name, tree<Node> searchTree){
 
 /*Simultaneously traverse the two trees in “depth first” fashion and maintain parity*/
 /*The pre_order_iterator here traveres DFS*/
-void SyncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree){
+void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 	tree<Node>::pre_order_iterator s_it  = (*sourceTree).begin();
 	tree<Node>::pre_order_iterator s_end = (*sourceTree).end();
 
 	tree<Node>::pre_order_iterator d_it  = (*destinationTree).begin();
 	tree<Node>::pre_order_iterator d_end = (*destinationTree).end();
 
+	tree<Node>::pre_order_iterator parentIter;
+	string nameOfParent;
+	Node *currentParent;
+	string rootSourceName = (*s_it).name;
+	string rootDestName = (*d_it).name;
+	struct Inode *inode;
+	struct Node node;
+	cout<<rootSourceName<<" "<<rootDestName<<endl;
+
 	++s_it;
 	++d_it;
 
 	while(s_it!=s_end) {
-		if(d_it == d_end){
-			if(isDirectory(*s_it)){
-				mkdir(((*d_it).name).c_str(), ACCESSPERMS);
+		inode = new Inode;
+    	node = {"", .inode = inode};
+		if(d_it == d_end) {
+			parentIter = sourceTree->parent(s_it);
+			nameOfParent = (*parentIter).name;
+			printf("Printing parent:");
+			printNode(*parentIter);
+			if(nameOfParent==rootSourceName){
+				currentParent = &(*(*destinationTree).begin());
+				
+			} else {
+
+				currentParent = findNodeByName(nameOfParent, *destinationTree);
+			}
+			
+			if(currentParent!=nullptr){
+				printNode(*currentParent);
+			} else {
+				printf("Parent does not exist\n");
+			}
+
+			if(isDirectory(*s_it)) {
+				//Make directory
+				printf("%s %s\n", (*s_it).name.c_str(), rootDestName.c_str());
+				printf("TODO make a directory at %s\n", getRelativePath((*s_it).name.c_str(), rootDestName.c_str()));
+				printf("TODO Insert node with append child to currentParent\n");
+				// mkdir(getRelativePath((*d_it).name.c_str(), rootDestName.c_str()), ACCESSPERMS);
+
+				//TODO make a directory (code above - didn't test)
+				//TODO Insert node with append chile to currentParent
+
+			} else {
+				printf("TODO make a file\n");
 			}
 		}
-		
 		++s_it;
 	}
 }
