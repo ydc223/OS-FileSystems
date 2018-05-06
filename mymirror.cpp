@@ -98,6 +98,7 @@ int main(int argc, char *argv[])
 
 
     // Finding node by name and inode number
+    /*
     find = findInodeByNum(1310723602, sourceTree);
     if(find != nullptr){
         printNode(*find);
@@ -113,8 +114,8 @@ int main(int argc, char *argv[])
         // cout<< "NAME: " << nameFind->name<<endl;
         printNode(*nameFind);
     }
-
-    // syncFolders(&sourceTree, &destinationTree);
+    */
+    syncFolders(&sourceTree, &destinationTree);
 
     // printTree(destinationTree);
 

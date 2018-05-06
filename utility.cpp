@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <sys/inotify.h>
+#include <cstdlib>
 #include <cstring>
 #include <string.h>
 #include <string>
-
 #include "utility.h"
 #include "tree.hh"
 #include <iostream>
@@ -233,21 +233,21 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 		if(d_it == d_end) {
 			parentIter = sourceTree->parent(s_it);
 			nameOfParent = (*parentIter).name;
-			printf("Printing parent: ");
+			//printf("Printing parent: ");
 			printNode(*parentIter);
 			if(nameOfParent==rootSourceName){
-				printf("parent == root\n");
+			  //printf("parent == root\n");
 				currentParent = (*destinationTree).begin();
 				
 			} else {
-				printf("parent IS NOT root\n");
+			        //printf("parent IS NOT root\n");
 				currentParent = findNodeByName(nameOfParent, destinationTree);
 			}
 			 
 			if(currentParent != nullptr){
 				printNode(*currentParent);
 			} else {
-				printf("Parent does not exist. Exiting...\n");
+			  //printf("Parent does not exist. Exiting...\n");
 				break;
 			}
 
@@ -268,19 +268,34 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 
 			} else {
 				//TODO: Create a file, copy the content, assign the stat of the new file to stat struct
-				printf("TODO make a file\n");
+				printf("Creating copy of file in backup\n");
+				copyFile(destinationTree, *s_it, (*s_it).name.c_str(), rootSourceName.c_str(), rootDestName.c_str());
 			}
-			printf("ABOUT TO APPEND %s TO ", node.name.c_str());
+			//printf("ABOUT TO APPEND %s TO ", node.name.c_str());
 			printNode(*currentParent);
 
 			//TODO: Figure out what's wrong =) 
 			newIt = (*destinationTree).append_child(currentParent, node);
 			
 
-			printf("CREATED NEW NODE, PRINTING: ");
+			//printf("CREATED NEW NODE, PRINTING: ");
 			printNode(*newIt);
 			printTree(*destinationTree);
 		}
 		++s_it;
 	}
+}
+
+
+void copyFile(tree<Node>* destinationTree, Node fileNode, const char* path, const char* source, const char* backup){
+  char* copyFrom = (char*)malloc(sizeof(char)*512);
+  char* copyTo = (char*)malloc(sizeof(char)*512);
+  char* cp_cmd = (char*)malloc(sizeof(char)*1024);
+  strcpy(copyFrom, getRelativePath(path, source));
+  strcpy(copyTo, getRelativePath(path, backup));
+  strcpy(cp_cmd, "cp ");
+  strcat(cp_cmd, copyFrom);
+  strcat(cp_cmd, " ");
+  strcat(cp_cmd, copyTo);
+  system(cp_cmd);
 }
