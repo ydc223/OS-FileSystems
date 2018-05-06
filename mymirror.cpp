@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     DIR * dir_ptr;
     DIR * dest_dir_ptr;
     char* name;
-    Node *nameFind;
+    tree<Node>::pre_order_iterator nameFind;
     Node *find;
     struct Inode *inode1 = new Inode;
     struct Node node1 = {"", inode1};
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
     string path = find->name;
     // printNode(*find);
     // printTree(sourceTree);
-    nameFind = findNodeByName(path, sourceTree);
+    nameFind = findNodeByName(path, &sourceTree);
     // printTree(sourceTree);
     // printTree(sourceTree);
 
@@ -114,7 +114,9 @@ int main(int argc, char *argv[])
         printNode(*nameFind);
     }
 
-    syncFolders(&sourceTree, &destinationTree);
+    // syncFolders(&sourceTree, &destinationTree);
+
+    // printTree(destinationTree);
 
 
 

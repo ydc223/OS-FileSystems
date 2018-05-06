@@ -168,7 +168,6 @@ void makeDirectoryTree(char* dir_path, char* root, tree<Node> * dirTree, tree<No
 				perror("Failed to get file status");
 				exit(1);
 			}
-
 			newIt = (*dirTree).append_child(it, node);
 			if (isDirectory(node)) {
 				makeDirectoryTree(name, root, dirTree, newIt, newIt);
@@ -192,13 +191,13 @@ Node* findInodeByNum(ino_t inode_number, tree<Node> searchTree) {
 	return nullptr;
 }
 
-Node* findNodeByName(string name, tree<Node> searchTree) {
-	tree<Node>::pre_order_iterator it  = searchTree.begin();
-	tree<Node>::pre_order_iterator end = searchTree.end();
+tree<Node>::pre_order_iterator findNodeByName(string name, tree<Node> *searchTree) {
+	tree<Node>::pre_order_iterator it  = (*searchTree).begin();
+	tree<Node>::pre_order_iterator end = (*searchTree).end();
 
 	while(it!=end) {
 		if(name == (*it).name) {
-			return (&(*it));
+			return it;
 		}
 		++it;
 	}
@@ -215,13 +214,15 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 	tree<Node>::pre_order_iterator d_end = (*destinationTree).end();
 
 	tree<Node>::pre_order_iterator parentIter;
+	tree<Node>::pre_order_iterator newIt;
 	string nameOfParent;
-	Node *currentParent;
+	tree<Node>::pre_order_iterator currentParent;
 	string rootSourceName = (*s_it).name;
 	string rootDestName = (*d_it).name;
 	struct Inode *inode;
 	struct Node node;
 	cout<<rootSourceName<<" "<<rootDestName<<endl;
+	char* dir_path;
 
 	++s_it;
 	++d_it;
@@ -232,35 +233,53 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 		if(d_it == d_end) {
 			parentIter = sourceTree->parent(s_it);
 			nameOfParent = (*parentIter).name;
-			printf("Printing parent:");
+			printf("Printing parent: ");
 			printNode(*parentIter);
 			if(nameOfParent==rootSourceName){
-				currentParent = &(*(*destinationTree).begin());
+				printf("parent == root\n");
+				currentParent = (*destinationTree).begin();
 				
 			} else {
-
-				currentParent = findNodeByName(nameOfParent, *destinationTree);
+				printf("parent IS NOT root\n");
+				currentParent = findNodeByName(nameOfParent, destinationTree);
 			}
-			
-			if(currentParent!=nullptr){
+			 
+			if(currentParent != nullptr){
 				printNode(*currentParent);
 			} else {
-				printf("Parent does not exist\n");
+				printf("Parent does not exist. Exiting...\n");
+				break;
 			}
 
+			node.name = (*s_it).name;
 			if(isDirectory(*s_it)) {
 				//Make directory
-				printf("%s %s\n", (*s_it).name.c_str(), rootDestName.c_str());
-				printf("TODO make a directory at %s\n", getRelativePath((*s_it).name.c_str(), rootDestName.c_str()));
-				printf("TODO Insert node with append child to currentParent\n");
-				// mkdir(getRelativePath((*d_it).name.c_str(), rootDestName.c_str()), ACCESSPERMS);
-
-				//TODO make a directory (code above - didn't test)
-				//TODO Insert node with append chile to currentParent
+				// printf("Naame: %s Root: %s\n", (*s_it).name.c_str(), rootDestName.c_str());
+				// printf("TODO make a directory at %s\n", getRelativePath((*s_it).name.c_str(), rootDestName.c_str()));
+				// printf("TODO Insert node with append child to currentParent\n");
+				dir_path = getRelativePath((*s_it).name.c_str(), rootDestName.c_str());
+				printf("MAKING DIRECTOTY AT: %s\n", dir_path);
+				mkdir(dir_path, ACCESSPERMS);
+				if (stat(dir_path, &(node.inode->statbuf)) == -1) { 
+					perror("Failed to get file status");
+					exit(1);
+				}
+				
 
 			} else {
+				//TODO: Create a file, copy the content, assign the stat of the new file to stat struct
 				printf("TODO make a file\n");
 			}
+			printf("ABOUT TO APPEND %s TO ", node.name.c_str());
+			printNode(*currentParent);
+
+			//TODO: Figure out what's wrong =) 
+			newIt = (*destinationTree).append_child(currentParent, node);
+			
+
+			printf("CREATED NEW NODE, PRINTING: ");
+			printNode(*newIt);
+			printTree(*destinationTree);
 		}
 		++s_it;
 	}

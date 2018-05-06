@@ -15,7 +15,7 @@ static void displayInotifyEvent(struct inotify_event *i);
 void traverseDir(char *);
 void makeDirectoryTree(char* dir_path, char* root, tree<Node> * dirTree, tree<Node>::pre_order_iterator it, tree<Node>::pre_order_iterator newIt);
 Node* findInodeByNum(ino_t inode_number, tree<Node> searchTree);
-Node* findNodeByName(string name, tree<Node> searchTree);
+tree<Node>::pre_order_iterator findNodeByName(string name, tree<Node> *searchTree);
 void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree);
 bool isDirectory(struct Node node);
 
