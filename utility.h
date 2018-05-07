@@ -19,6 +19,7 @@ tree<Node>::pre_order_iterator findNodeByName(string name, tree<Node> *searchTre
 void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree);
 bool isDirectory(struct Node node);
 void copyFile(const char* path, const char* source, const char* backup);
+void displayInotifyEvent(struct inotify_event* i);
 
 typedef struct Inode {
 	struct stat statbuf;
