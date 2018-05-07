@@ -18,8 +18,10 @@
 #include "tree_util.hh"
 #include <sys/types.h> 
 #include <dirent.h>
+#include<string>
 #include <map>
 
+#define MAX_HARDLINKS 512
 using namespace std;
 
 
@@ -36,8 +38,11 @@ bool isDirectory(struct Node node);
 void copyFile(const char* path, const char* source, const char* backup);
 map<int, tree<Node>::pre_order_iterator> assignWatchers(tree<Node>* sourceTree, int inotifyFd);
 
+
+
 typedef struct Inode {
 	struct stat statbuf;
+    string linked_files[MAX_HARDLINKS];
 	int hardLinks;
 } Inode;
 
@@ -45,6 +50,6 @@ typedef struct Node {
 	string name;
 	struct Inode *inode;
 } Node;
-
-
+Inode* existingInode(tree<Node>* sourceTree, ino_t inode_number);
+bool NameLinksToInodeNumber(string name, Inode* inode);
 #endif // SORT_H

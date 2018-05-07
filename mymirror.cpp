@@ -10,7 +10,7 @@
 #include <sys/types.h> 
 #include <dirent.h>
 
-
+#define MAX_INODES 1024
 // #include "tlpi_hdr.h"
 
 /* Display information from inotify_event structure */
@@ -67,6 +67,8 @@ int main(int argc, char *argv[])
     tree<Node>::pre_order_iterator treeIt;
     map<int, tree<Node>::pre_order_iterator>  watchDescriptors;
 
+
+
     if (argc < 3 || strcmp(argv[1], "--help") == 0){
         printf("%s source target...\n", argv[0]);
         return 0;
@@ -78,7 +80,7 @@ int main(int argc, char *argv[])
     // memcpy(root, source, strlen(source)+1);
 
     backup = argv[2];
-    printf("Source %s, backup%s\n", source, backup);
+    printf("Source %s, backup %s\n", source, backup);
 
     tree<Node> sourceTree;
     tree<Node> destinationTree;
