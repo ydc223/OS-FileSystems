@@ -223,6 +223,7 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 	struct Node node;
 	cout<<rootSourceName<<" "<<rootDestName<<endl;
 	char* dir_path;
+	char* file_path;
 
 	++s_it;
 	++d_it;
@@ -240,14 +241,14 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 				currentParent = (*destinationTree).begin();
 				
 			} else {
-			        //printf("parent IS NOT root\n");
+			  //printf("parent IS NOT root\n");
 				currentParent = findNodeByName(nameOfParent, destinationTree);
 			}
 			 
 			if(currentParent != nullptr){
 				printNode(*currentParent);
 			} else {
-			  //printf("Parent does not exist. Exiting...\n");
+			  printf("Parent does not exist. Exiting...\n");
 				break;
 			}
 
@@ -255,32 +256,40 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 			if(isDirectory(*s_it)) {
 				//Make directory
 				// printf("Naame: %s Root: %s\n", (*s_it).name.c_str(), rootDestName.c_str());
-				// printf("TODO make a directory at %s\n", getRelativePath((*s_it).name.c_str(), rootDestName.c_str()));
+				//printf("TODO make a directory at %s\n", getRelativePath((*s_it).name.c_str(), rootDestName.c_str()));
 				// printf("TODO Insert node with append child to currentParent\n");
 				dir_path = getRelativePath((*s_it).name.c_str(), rootDestName.c_str());
 				printf("MAKING DIRECTOTY AT: %s\n", dir_path);
 				mkdir(dir_path, ACCESSPERMS);
 				if (stat(dir_path, &(node.inode->statbuf)) == -1) { 
-					perror("Failed to get file status");
+					perror("Failed to get dir status");
 					exit(1);
 				}
 				
 
 			} else {
 				//TODO: Create a file, copy the content, assign the stat of the new file to stat struct
-				printf("Creating copy of file in backup\n");
+			        printf("Creating copy of file in backup %s at %s...", (*s_it).name.c_str(), rootDestName.c_str());
 				copyFile(destinationTree, *s_it, (*s_it).name.c_str(), rootSourceName.c_str(), rootDestName.c_str());
+				printf("copy complete. File-node details: ");
+				file_path = getRelativePath((*s_it).name.c_str(), rootDestName.c_str());
+				if(stat(file_path, &(node.inode->statbuf)) == -1){
+				  perror("Failed to get file status");
+				  exit(1);
+				}
+				printNode(node);
+				
+				
 			}
-			//printf("ABOUT TO APPEND %s TO ", node.name.c_str());
 			printNode(*currentParent);
 
 			//TODO: Figure out what's wrong =) 
-			d_it = (*destinationTree).append_child(currentParent, node);
+			newIt = (*destinationTree).append_child(currentParent, node);
 			
 
-			printf("CREATED NEW NODE, PRINTING: ");
-			printNode(*newIt);
-			printTree(*destinationTree);
+			//printf("CREATED NEW NODE, PRINTING: ");
+			//printNode(*newIt);
+			//printTree(*destinationTree);
 		}
 		++s_it;
 	}
@@ -290,21 +299,23 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 void copyFile(tree<Node>* destinationTree, Node fileNode, const char* path, const char* source, const char* backup){
 	char* copyFrom = (char*)malloc(sizeof(char)*512);
 	char* copyTo = (char*)malloc(sizeof(char)*512);
-	char* cp_cmd = (char*)malloc(sizeof(char)*1024);
 	strcpy(copyFrom, getRelativePath(path, source));
 	strcpy(copyTo, getRelativePath(path, backup));
+	//cout<< "File read: "<<copyFrom<<", file write: "<<copyTo<<endl;
+	
 	char buffer[4096];
 	size_t bytes;
 	FILE *readFrom = fopen(copyFrom,"r");
 	FILE *writeTo = fopen(copyTo, "w");
 	if(readFrom == NULL || writeTo == NULL){
-		return;
+	  //cout<<"Opening File Pointers Failed"<<endl;
 	}
 
 	while ((bytes = fread(buffer, 1, sizeof(buffer), readFrom)) != 0){
 		fwrite(buffer, 1, bytes, writeTo);
 	}
-
+	//cout<<"Got here too"<<endl;
 	fclose(readFrom);
 	fclose(writeTo);
+       
 }
