@@ -18,7 +18,7 @@ Node* findInodeByNum(ino_t inode_number, tree<Node> searchTree);
 tree<Node>::pre_order_iterator findNodeByName(string name, tree<Node> *searchTree);
 void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree);
 bool isDirectory(struct Node node);
-void copyFile(tree<Node>* destinationTree, Node fileNode, const char* path, const char* source, const char* backup);
+void copyFile(const char* path, const char* source, const char* backup);
 
 typedef struct Inode {
 	struct stat statbuf;

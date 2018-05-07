@@ -259,34 +259,26 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 				//printf("TODO make a directory at %s\n", getRelativePath((*s_it).name.c_str(), rootDestName.c_str()));
 				// printf("TODO Insert node with append child to currentParent\n");
 				dir_path = getRelativePath((*s_it).name.c_str(), rootDestName.c_str());
-				printf("MAKING DIRECTOTY AT: %s\n", dir_path);
+				// printf("MAKING DIRECTOTY AT: %s\n", dir_path);
 				mkdir(dir_path, ACCESSPERMS);
 				if (stat(dir_path, &(node.inode->statbuf)) == -1) { 
 					perror("Failed to get dir status");
 					exit(1);
 				}
-				
-
 			} else {
 				//TODO: Create a file, copy the content, assign the stat of the new file to stat struct
-			        printf("Creating copy of file in backup %s at %s...", (*s_it).name.c_str(), rootDestName.c_str());
+			        // printf("Creating copy of file in backup %s at %s...", (*s_it).name.c_str(), rootDestName.c_str());
 				copyFile(destinationTree, *s_it, (*s_it).name.c_str(), rootSourceName.c_str(), rootDestName.c_str());
-				printf("copy complete. File-node details: ");
+				// printf("copy complete. File-node details: ");
 				file_path = getRelativePath((*s_it).name.c_str(), rootDestName.c_str());
 				if(stat(file_path, &(node.inode->statbuf)) == -1){
 				  perror("Failed to get file status");
 				  exit(1);
 				}
-				printNode(node);
-				
-				
+				// printNode(node);
 			}
-			printNode(*currentParent);
-
-			//TODO: Figure out what's wrong =) 
+			// printNode(*currentParent);
 			newIt = (*destinationTree).append_child(currentParent, node);
-			
-
 			//printf("CREATED NEW NODE, PRINTING: ");
 			//printNode(*newIt);
 			//printTree(*destinationTree);
@@ -296,7 +288,7 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 }
 
 
-void copyFile(tree<Node>* destinationTree, Node fileNode, const char* path, const char* source, const char* backup){
+void copyFile(const char* path, const char* source, const char* backup){
 	char* copyFrom = (char*)malloc(sizeof(char)*512);
 	char* copyTo = (char*)malloc(sizeof(char)*512);
 	strcpy(copyFrom, getRelativePath(path, source));
@@ -309,6 +301,7 @@ void copyFile(tree<Node>* destinationTree, Node fileNode, const char* path, cons
 	FILE *writeTo = fopen(copyTo, "w");
 	if(readFrom == NULL || writeTo == NULL){
 	  //cout<<"Opening File Pointers Failed"<<endl;
+		return;
 	}
 
 	while ((bytes = fread(buffer, 1, sizeof(buffer), readFrom)) != 0){
@@ -317,5 +310,4 @@ void copyFile(tree<Node>* destinationTree, Node fileNode, const char* path, cons
 	//cout<<"Got here too"<<endl;
 	fclose(readFrom);
 	fclose(writeTo);
-       
 }
