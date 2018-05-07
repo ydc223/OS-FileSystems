@@ -32,6 +32,8 @@ int main(int argc, char *argv[])
     Node *find;
     struct Inode *inode1 = new Inode;
     struct Node node1 = {"", inode1};
+    struct Inode *inode2 = new Inode;
+    struct Node node2 = {"", inode2};
     tree<Node>::pre_order_iterator treeIt;
 
     if (argc < 3 || strcmp(argv[1], "--help") == 0){
@@ -77,12 +79,12 @@ int main(int argc, char *argv[])
     }
     // struct stat statbuf;
 
-    if (stat(source, &(node1.inode->statbuf)) == -1) { 
+    if (stat(source, &(node2.inode->statbuf)) == -1) { 
         perror("Failed to get file status");
         exit(1);
     } else{
-        node1.name = source;
-        treeIt = sourceTree.insert(sourceTree.begin(), node1);
+        node2.name = source;
+        treeIt = sourceTree.insert(sourceTree.begin(), node2);
     }
     // printTree(sourceTree);
     

@@ -178,13 +178,13 @@ void makeDirectoryTree(char* dir_path, char* root, tree<Node> * dirTree, tree<No
 }
 
 
-Node* findInodeByNum(ino_t inode_number, tree<Node> searchTree) {
-	tree<Node>::pre_order_iterator it  = searchTree.begin();
-	tree<Node>::pre_order_iterator end = searchTree.end();
+tree<Node>::pre_order_iterator findInodeByNum(ino_t inode_number, tree<Node> *searchTree) {
+	tree<Node>::pre_order_iterator it  = (*searchTree).begin();
+	tree<Node>::pre_order_iterator end = (*searchTree).end();
 
 	while(it!=end) {
 		if((*it).inode->statbuf.st_ino == inode_number) {
-			return (&(*it));
+			return it;
 		}
 		++it;
 	}
