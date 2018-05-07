@@ -275,10 +275,10 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 			printNode(*currentParent);
 
 			//TODO: Figure out what's wrong =) 
-			newIt = (*destinationTree).append_child(currentParent, node);
+			d_it = (*destinationTree).append_child(currentParent, node);
 			
 
-			//printf("CREATED NEW NODE, PRINTING: ");
+			printf("CREATED NEW NODE, PRINTING: ");
 			printNode(*newIt);
 			printTree(*destinationTree);
 		}
@@ -288,14 +288,23 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 
 
 void copyFile(tree<Node>* destinationTree, Node fileNode, const char* path, const char* source, const char* backup){
-  char* copyFrom = (char*)malloc(sizeof(char)*512);
-  char* copyTo = (char*)malloc(sizeof(char)*512);
-  char* cp_cmd = (char*)malloc(sizeof(char)*1024);
-  strcpy(copyFrom, getRelativePath(path, source));
-  strcpy(copyTo, getRelativePath(path, backup));
-  strcpy(cp_cmd, "cp ");
-  strcat(cp_cmd, copyFrom);
-  strcat(cp_cmd, " ");
-  strcat(cp_cmd, copyTo);
-  system(cp_cmd);
+	char* copyFrom = (char*)malloc(sizeof(char)*512);
+	char* copyTo = (char*)malloc(sizeof(char)*512);
+	char* cp_cmd = (char*)malloc(sizeof(char)*1024);
+	strcpy(copyFrom, getRelativePath(path, source));
+	strcpy(copyTo, getRelativePath(path, backup));
+	char buffer[4096];
+	size_t bytes;
+	FILE *readFrom = fopen(copyFrom,"r");
+	FILE *writeTo = fopen(copyTo, "w");
+	if(readFrom == NULL || writeTo == NULL){
+		return;
+	}
+
+	while ((bytes = fread(buffer, 1, sizeof(buffer), readFrom)) != 0){
+		fwrite(buffer, 1, bytes, writeTo);
+	}
+
+	fclose(readFrom);
+	fclose(writeTo);
 }
