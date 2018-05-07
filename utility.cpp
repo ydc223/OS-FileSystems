@@ -268,7 +268,7 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 			} else {
 				//TODO: Create a file, copy the content, assign the stat of the new file to stat struct
 			        // printf("Creating copy of file in backup %s at %s...", (*s_it).name.c_str(), rootDestName.c_str());
-				copyFile(destinationTree, *s_it, (*s_it).name.c_str(), rootSourceName.c_str(), rootDestName.c_str());
+				copyFile((*s_it).name.c_str(), rootSourceName.c_str(), rootDestName.c_str());
 				// printf("copy complete. File-node details: ");
 				file_path = getRelativePath((*s_it).name.c_str(), rootDestName.c_str());
 				if(stat(file_path, &(node.inode->statbuf)) == -1){
