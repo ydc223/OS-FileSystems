@@ -3,11 +3,26 @@
 
 #include <string>
 #include <sys/stat.h>
-#include "tree.hh"
-#include <dirent.h>
 
+#include <dirent.h>
+#include "tree.hh"
+
+#include <sys/inotify.h>
+#include <limits.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h> /* printf() */
+#include <iostream>
+#include "utility.h"
+#include "tree.hh"
+#include "tree_util.hh"
+#include <sys/types.h> 
+#include <dirent.h>
+#include <map>
 
 using namespace std;
+
+
 
 void printTree(tree<struct Node> tr);
 void printNode(struct Node node);
@@ -19,7 +34,7 @@ tree<Node>::pre_order_iterator findNodeByName(string name, tree<Node> *searchTre
 void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree);
 bool isDirectory(struct Node node);
 void copyFile(const char* path, const char* source, const char* backup);
-void displayInotifyEvent(struct inotify_event* i);
+map<int, tree<Node>::pre_order_iterator> assignWatchers(tree<Node>* sourceTree, int inotifyFd);
 
 typedef struct Inode {
 	struct stat statbuf;

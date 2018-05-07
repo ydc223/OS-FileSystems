@@ -10,6 +10,7 @@
 #include <string.h>
 #include "tree_util.hh"
 #include <dirent.h>
+#include <map>
 
 
 using namespace std;
@@ -37,81 +38,6 @@ void printNode(struct Node node){
 	// printf("Node name: %s Inode name: %s\n", node.name, node.inode.name);
 }
 
-
-/* Display information from inotify_event structure */
-static void displayInotifyEvent(struct inotify_event *i)
-{
-    printf("wd =%2d; ", i->wd);
-    if (i->cookie > 0)
-        printf("cookie =%4d; ", i->cookie);
-
-    printf("mask = ");
-    if (i->mask & IN_ACCESS)        printf("IN_ACCESS ");
-    if (i->mask & IN_ATTRIB)        printf("IN_ATTRIB ");
-    if (i->mask & IN_CLOSE_NOWRITE) printf("IN_CLOSE_NOWRITE ");
-    if (i->mask & IN_CLOSE_WRITE)   printf("IN_CLOSE_WRITE ");
-    if (i->mask & IN_CREATE)        printf("IN_CREATE ");
-    if (i->mask & IN_DELETE)        printf("IN_DELETE ");
-    if (i->mask & IN_DELETE_SELF)   printf("IN_DELETE_SELF ");
-    if (i->mask & IN_IGNORED)       printf("IN_IGNORED ");
-    if (i->mask & IN_ISDIR)         printf("IN_ISDIR ");
-    if (i->mask & IN_MODIFY)        printf("IN_MODIFY ");
-    if (i->mask & IN_MOVE_SELF)     printf("IN_MOVE_SELF ");
-    if (i->mask & IN_MOVED_FROM)    printf("IN_MOVED_FROM ");
-    if (i->mask & IN_MOVED_TO)      printf("IN_MOVED_TO ");
-    if (i->mask & IN_OPEN)          printf("IN_OPEN ");
-    if (i->mask & IN_Q_OVERFLOW)    printf("IN_Q_OVERFLOW ");
-    if (i->mask & IN_UNMOUNT)       printf("IN_UNMOUNT ");
-    printf("\n");
-
-    if (i->len > 0)
-        printf("        name = %s\n", i->name);
-}
-
-void traverseDir(char* dir_path) {
-	struct dirent *direntp;
-	struct stat statbuf;
-	char name [100];
-	DIR *dir_ptr;
-
-	dir_ptr = opendir(dir_path);
-    if(dir_ptr == nullptr) {
-        perror("Open dir");
-        exit(1);
-    }
-
-	while ( ( direntp=readdir(dir_ptr) ) != NULL ){
-		
-		if(strcmp(direntp->d_name, ".") == 0 || strcmp(direntp->d_name, "..") == 0) {
-			printf(". or ..\n");
-		} else{
-			memset(name,0,strlen(name));
-			strcpy(name, dir_path);
-			strcat(name, "/");
-			strcat(name, direntp->d_name);
-			printf("inode %d of the entry %s \n", \
-					(int)direntp->d_ino, name);
-			if (stat(name, &statbuf) == -1) { 
-				perror("Failed to get file status");
-			}
-			else {
-				if ((statbuf.st_mode & S_IFMT) == S_IFDIR) {
-					printf("Recursing on %s!\n", name);
-					traverseDir(name);
-				}
-			}
-		}
-	}
-	closedir(dir_ptr);
-}
-
-bool isDirectory(struct Node node){
-	if ((node.inode->statbuf.st_mode & S_IFMT) == S_IFDIR) {
-		return true;
-	}
-	return false;
-}
-
 char* getRelativePath(const char* name, const char* rootFolder){
 	char *relatvePath = (char*)malloc(sizeof(char)*100);
 	memset(relatvePath,0,strlen(relatvePath));
@@ -119,6 +45,48 @@ char* getRelativePath(const char* name, const char* rootFolder){
 	strcat(relatvePath, "/");
 	strcat(relatvePath, name);
 	return relatvePath;
+}
+
+map<int, tree<Node>::pre_order_iterator> assignWatchers(tree<Node>* sourceTree, int inotifyFd) {
+
+	tree<Node>::pre_order_iterator it  = (*sourceTree).begin();
+	tree<Node>::pre_order_iterator end = (*sourceTree).end();
+	map<int, tree<Node>::pre_order_iterator>  watchDescriptors;
+	char *path = (char*)malloc(512*sizeof(char));
+	string root = (*it).name;
+	int wd;
+
+	while(it!=end) {
+
+		if(isDirectory(*it)) {
+
+			if(root == (*it).name){
+				strcpy(path,(*it).name.c_str());
+			} else {
+				strcpy(path, getRelativePath((*it).name.c_str(), root.c_str()));
+			}
+
+			printf("DIR: Assign watcher to %s\n", path);
+
+			// Assign inotify watchers to all directories
+			wd = inotify_add_watch(inotifyFd, path, IN_ALL_EVENTS);
+			   if (wd == -1)
+			       perror("inotify_add_watch");
+
+			printf("Watching %s using wd %d\n", path, wd);
+			watchDescriptors[wd] = it;
+			// return watchDescriptors;
+		}
+		++it;
+	}
+	return watchDescriptors;
+}
+
+bool isDirectory(struct Node node){
+	if ((node.inode->statbuf.st_mode & S_IFMT) == S_IFDIR) {
+		return true;
+	}
+	return false;
 }
 
 
