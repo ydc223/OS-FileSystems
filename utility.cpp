@@ -136,9 +136,24 @@ void makeDirectoryTree(char* dir_path, char* root, tree<Node> * dirTree, tree<No
 				perror("Failed to get file status");
 				exit(1);
 			}
+
 			newIt = (*dirTree).append_child(it, node);
 			if (isDirectory(node)) {
 				makeDirectoryTree(name, root, dirTree, newIt, newIt);
+			}
+			else{
+				// if there already exists an inode with the stat'd inode number, this tree node should just point to the same inode
+				Inode *existing = existingInode(dirTree, node.inode->statbuf.st_ino);
+				if(existing != nullptr && !NameLinksToInodeNumber(getRelativePath(name, root), existing)){
+					cout<<"Already existing Inode for this file: "<<existing->linked_files[0]<<". Linking to it..."<<endl;
+					node.inode = existing; 
+					node.inode->linked_files[node.inode->hardLinks] = getRelativePath(name, root);
+					node.inode->hardLinks++;
+				} else{
+					node.inode->hardLinks = 1;
+					node.inode->linked_files[0] = getRelativePath(name, root);
+					cout<<"Had to make a new inode. It has "<<node.inode->hardLinks<<" hardLinks"<<endl;
+				}
 			}
 		}
 	}
@@ -236,12 +251,25 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 			} else {
 				//TODO: Create a file, copy the content, assign the stat of the new file to stat struct
 			        // printf("Creating copy of file in backup %s at %s...", (*s_it).name.c_str(), rootDestName.c_str());
+				
 				copyFile((*s_it).name.c_str(), rootSourceName.c_str(), rootDestName.c_str());
 				// printf("copy complete. File-node details: ");
 				file_path = getRelativePath((*s_it).name.c_str(), rootDestName.c_str());
 				if(stat(file_path, &(node.inode->statbuf)) == -1){
 				  perror("Failed to get file status");
 				  exit(1);
+				}
+				Inode *existing = existingInode(sourceTree, node.inode->statbuf.st_ino);
+				if(existing != nullptr){
+					cout<<"Already existing Inode for this file. Storing info in Inode..."<<endl;
+					node.inode = existing; 
+					node.inode->linked_files[node.inode->hardLinks] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
+					node.inode->hardLinks++;
+				}
+				else{
+					node.inode->hardLinks = 1;
+					node.inode->linked_files[0] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
+					cout<<"Created new inode. It has "<<node.inode->hardLinks<<" hardLinks"<<endl;
 				}
 				// printNode(node);
 			}
@@ -278,4 +306,30 @@ void copyFile(const char* path, const char* source, const char* backup){
 	//cout<<"Got here too"<<endl;
 	fclose(readFrom);
 	fclose(writeTo);
+}
+
+Inode* existingInode(tree<Node>* sourceTree, ino_t inode_number){
+	tree<Node>::pre_order_iterator it  = (*sourceTree).begin();
+	tree<Node>::pre_order_iterator end = (*sourceTree).end();
+
+	while(it!=end) {
+		if((*it).inode->statbuf.st_ino == inode_number){
+			cout<<"EXISTING INODE SAY TRUE"<<(*it).inode->linked_files[0]<<endl;
+			return (*it).inode;
+		}
+		// printNode(*it); 
+		++it;
+	}
+	cout<<"EXISTING INODE SAY NOPE"<<endl;
+	return nullptr;
+}
+
+bool NameLinksToInodeNumber(string name, Inode* inode){
+	int links = inode->hardLinks;
+	for(int i = 0; i < links; i++){
+		if(inode->linked_files[i] == name){
+			return true;
+		}
+	}
+	return false;
 }
