@@ -161,13 +161,13 @@ void makeDirectoryTree(char* dir_path, char* root, tree<Node> * dirTree, tree<No
 }
 
 
-tree<Node>::pre_order_iterator findInodeByNum(ino_t inode_number, tree<Node> *searchTree) {
+Inode* findInodeByNum(ino_t inode_number, tree<Node> *searchTree) {
 	tree<Node>::pre_order_iterator it  = (*searchTree).begin();
 	tree<Node>::pre_order_iterator end = (*searchTree).end();
 
 	while(it!=end) {
 		if((*it).inode->statbuf.st_ino == inode_number) {
-			return it;
+			return (*it).inode;
 		}
 		++it;
 	}
@@ -259,6 +259,7 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 				  perror("Failed to get file status");
 				  exit(1);
 				}
+				//Does this file we just created have the same inode number as another file in Source?
 				Inode *existing = existingInode(sourceTree, node.inode->statbuf.st_ino);
 				if(existing != nullptr){
 					cout<<"Already existing Inode for this file. Storing info in Inode..."<<endl;
