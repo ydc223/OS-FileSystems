@@ -101,39 +101,34 @@ int main(int argc, char *argv[])
 
 
 
- //    inotifyFd = inotify_init();                 /* Create inotify instance */
- //    if (inotifyFd == -1)
- //        perror("inotify_init");
+   inotifyFd = inotify_init();                 /* Create inotify instance */
+   if (inotifyFd == -1)
+       perror("inotify_init");
+   /* For each command-line argument, add a watch for all events */
 
- //    /* For each command-line argument, add a watch for all events */
+   for (j = 1; j < argc; j++) {
+       wd = inotify_add_watch(inotifyFd, argv[j], IN_ALL_EVENTS);
+       if (wd == -1)
+           perror("inotify_add_watch");
 
- //    for (j = 1; j < argc; j++) {
- //        wd = inotify_add_watch(inotifyFd, argv[j], IN_ALL_EVENTS);
- //        if (wd == -1)
- //            perror("inotify_add_watch");
+       printf("Watching %s using wd %d\n", argv[j], wd);
+   }
 
- //        printf("Watching %s using wd %d\n", argv[j], wd);
- //    }
+   for (;;) {                                  /* Read events forever */
+       numRead = read(inotifyFd, buf, BUF_LEN);
+       if (numRead == 0)
+           perror("read() from inotify fd returned 0!");
 
- //    for (;;) {                                  /* Read events forever */
- //        numRead = read(inotifyFd, buf, BUF_LEN);
- //        if (numRead == 0)
- //            perror("read() from inotify fd returned 0!");
-
- //        if (numRead == -1)
- //            perror("read");
-
- //        printf("Read %ld bytes from inotify fd\n", (long) numRead);
-
- //        /* Process all of the events in buffer returned by read() */
-
- //        for (p = buf; p < buf + numRead; ) {
- //            event = (struct inotify_event *) p;
- //            displayInotifyEvent(event);
-
- //            p += sizeof(struct inotify_event) + event->len;
- //        }
- //    }
+       if (numRead == -1)
+           perror("read");
+       printf("Read %ld bytes from inotify fd\n", (long) numRead);
+       /* Process all of the events in buffer returned by read() */
+       for (p = buf; p < buf + numRead; ) {
+           event = (struct inotify_event *) p;
+           displayInotifyEvent(event);
+           p += sizeof(struct inotify_event) + event->len;
+       }
+   }
 
 	return 0;
 }
