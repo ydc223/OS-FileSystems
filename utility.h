@@ -45,7 +45,7 @@ void handleIN_DELETE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
 void handleIN_DELETE_SELF(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot);
 //u_int32_t handleIN_MOVED_FROM(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot);
 void handleIN_MOVED_TO(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot);
-char* getRelativePath(const char* name, const char* rootFolder);
+
 
 typedef struct Inode {
 	struct stat statbuf;
