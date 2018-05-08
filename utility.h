@@ -41,7 +41,7 @@ void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
 void handleIN_CREATE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot);
 void handleIN_MODIFY(tree<Node>::pre_order_iterator it, tree<Node> *sourceTree, char* modifiedFileName);
 void handleIN_CLOSE_WRITE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot);
-void handleIN_DELETE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot);
+void handleIN_DELETE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot);
 void handleIN_DELETE_SELF(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot);
 void handleIN_MOVED_FROM(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot);
 void handleIN_MOVED_TO(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot);

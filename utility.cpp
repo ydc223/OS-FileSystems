@@ -558,7 +558,7 @@ void handleIN_CLOSE_WRITE(tree<Node>::pre_order_iterator it, tree<Node> *backupT
     }
 }
 
-void handleIN_DELETE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot){
+void handleIN_DELETE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot){
     cout<<"Handling IN_DELETE...";
     char modFilePath[512];
     strcpy(modFilePath, modifiedFileName);
@@ -578,15 +578,17 @@ void handleIN_DELETE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
 
     }
     if(isDirectory((*modifiedNode))){
-        cout<<"Call was to a directory, we do rmdir to "<<getRelativePath((*modifiedNode).name.c_str(), sourceRoot)<<endl;
+        cout<<"Call was to a directory, we do rmdir to "<<getRelativePath((*modifiedNode).name.c_str(), backupRoot)<<endl;
         (*sourceTree).erase(modifiedNode);
         (*backupTree).erase(backupNode);
+	rmdir(getRelativePath((*modifiedNode).name.c_str(), backupRoot));
         return;
     }
     else{
-        cout<<"Call was to a file, we unlink the file "<<getRelativePath((*modifiedNode).name.c_str(), sourceRoot)<<endl;
+      cout<<"Call was to a file, we unlink the file "<<getRelativePath((*modifiedNode).name.c_str(), backupRoot)<<endl;
         (*sourceTree).erase(modifiedNode);
         (*backupTree).erase(backupNode);
+	unlink(getRelativePath((*modifiedNode).name.c_str(), backupRoot));
         return;
     }
 }
