@@ -14,7 +14,7 @@
 // #include "tlpi_hdr.h"
 
 /* Display information from inotify_event structure and call the appropriate handler*/
-static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pre_order_iterator>, tree<Node>* destinationTree);
+static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pre_order_iterator>, tree<Node>* destinationTree,  tree<Node>* sourceTree, char* sourceRoot);
 
 
 
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
        /* Process all of the events in buffer returned by read() */
        for (p = buf; p < buf + numRead; ) {
            event = (struct inotify_event *) p;
-           handleInotifyEvents(event, watchDescriptors, &destinationTree);
+           handleInotifyEvents(event, watchDescriptors, &destinationTree, &sourceTree, source);
            p += sizeof(struct inotify_event) + event->len;
        }
    }
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pre_order_iterator> watchDescriptors, tree<Node>* destinationTree) {
+static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pre_order_iterator> watchDescriptors, tree<Node>* destinationTree, tree<Node>* sourceTree, char* sourceRoot) {
 
     printf("wd =%2d; ", i->wd);
     if (i->cookie > 0)
@@ -148,7 +148,7 @@ static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pr
 
     printf("mask = ");
     if (i->mask & IN_ACCESS)        printf("IN_ACCESS ");
-      if (i->mask & IN_ATTRIB)      /*printf("IN_ATTRIB ");*/handleIN_ATTRIB(watchDescriptors[i->wd], destinationTree);
+      if (i->mask & IN_ATTRIB)      /*printf("IN_ATTRIB ");*/handleIN_ATTRIB(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot);
     if (i->mask & IN_CLOSE_NOWRITE) printf("IN_CLOSE_NOWRITE ");
     if (i->mask & IN_CLOSE_WRITE)   printf("IN_CLOSE_WRITE ");
     if (i->mask & IN_CREATE)        printf("IN_CREATE ");

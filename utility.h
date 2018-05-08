@@ -37,7 +37,7 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree);
 bool isDirectory(struct Node node);
 void copyFile(const char* path, const char* source, const char* backup);
 map<int, tree<Node>::pre_order_iterator> assignWatchers(tree<Node>* sourceTree, int inotifyFd);
-void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree);
+void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot);
 void handleIN_CREATE();
 void handleIN_MODIFY();
 void handleIN_CLOSE_WRITE();

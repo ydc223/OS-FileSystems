@@ -10,6 +10,7 @@
 #include <string.h>
 #include "tree_util.hh"
 #include <dirent.h>
+#include <time.h>
 #include <map>
 
 
@@ -373,22 +374,44 @@ bool NameLinksToInodeNumber(string name, Inode* inode){
 	return false;
 }
 
-void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree) {
-	cout<<"Handling IN_ATTRIB call which happened on file "<<(*it).name<<" in the source folder"<<endl;
+void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot) {
+    char modFilePath[512];
+    cout<<"Call is on "<<it->name<<" and "<<modifiedFileName<<endl;
+    strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
+    cout<<"Modfilepath: "<<modFilePath<<endl;
+    tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
+    tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
+    if(isDirectory((*modifiedNode))){
+        cout<<"Call was to a directory, we do nothing"<<endl;
+        return;
+    }
+    strcpy(modFilePath, getRelativePath(modFilePath, sourceRoot));
 
-	/*Get the statbuf of the node passed in. Take that statbuf's last-modified date and put it into the statbuf of the corresponding node in backup*/
-	auto lastModDate = (*it).inode->statbuf.st_mtim;
-	cout<<"name of *it node:"<<(*it).name<<endl;
-	tree<Node>::pre_order_iterator backupNode = findNodeByName((*it).name, backupTree);
-	cout<<"Also got here..."<<endl;
-	/*If the times are counting up from 01/01/1970, then whicever one has the higher tv_sec happened later.
-	 * So if node in Source was modified later, we update the last-modification-time into the node in backup*/
-	if((*backupNode).inode->statbuf.st_mtim.tv_sec < lastModDate.tv_sec){
+    cout<<"Handling IN_ATTRIB call which happened on file "<<(*modifiedNode).name<<" in the source folder: "<<sourceRoot;
+
+
+	/*Call statbuf again on the node that was passed in, as we know it has a new time of modification.
+	 * Take that statbuf's last-modified date and put it into the statbuf of the corresponding node in backup if bigger*/
+//	cout<<getRelativePath(modifiedFileName, sourceRoot)<<endl;
+
+
+	if(modifiedNode == nullptr || backupNode == nullptr){
+	    cout<<"We exit disgracefully";
+        exit(1);
+	}
+    cout<<"got here"<<endl;
+	if(stat(modFilePath, &(*modifiedNode).inode->statbuf) == -1){
+	    perror("Failed to statbuf");
+	    exit(1);
+	}
+//	cout<<"name of *it node:"<<(*it).name<<endl;
+    cout<<"got here too"<<endl;
+
+    if((*backupNode).inode->statbuf.st_mtim.tv_sec < (*modifiedNode).inode->statbuf.st_mtim.tv_sec){
 		cout<<"Time of last modification is more recent in source. Updating in backup..."<<endl;
-		(*backupNode).inode->statbuf.st_mtim.tv_sec = lastModDate.tv_sec;
+		(*backupNode).inode->statbuf.st_mtim.tv_sec = (*modifiedNode).inode->statbuf.st_mtim.tv_sec ;
 		return;
 	}
-	cout<<"ayy lmao?"<<endl;
-	return;
+	cout<<"Modification times did not differ, we do nothing"<<endl;
 }
 
