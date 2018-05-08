@@ -284,20 +284,18 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 
 				//Does this file we just created have the same inode number as another file in Source?
 				// Inode *existing = existingInode(sourceTree, (*s_it).inode->statbuf.st_ino);
+                // if() {
+                // 	cout<<"Already existing Inode for this file. Storing info in Inode..."<<endl;
+                // 	node.inode = existing;
+                // 	node.inode->linkedFiles[node.inode->hardLinks] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
+                // 	node.inode->hardLinks++;
+                // } else {
+                // 	node.inode->hardLinks = 1;
+                // 	node.inode->linkedFiles[0] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
+                // 	cout<<"Created new inode. It has "<<node.inode->hardLinks<<" hardLinks"<<endl;
+                // }
+                // printNode(node);
 				ret = linkIfInodeExists(*s_it, destinationTree, &node);
-
-				// if() {
-				// 	cout<<"Already existing Inode for this file. Storing info in Inode..."<<endl;
-				// 	node.inode = existing; 
-				// 	node.inode->linkedFiles[node.inode->hardLinks] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
-				// 	node.inode->hardLinks++;
-				// } else {
-				// 	node.inode->hardLinks = 1;
-				// 	node.inode->linkedFiles[0] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
-				// 	cout<<"Created new inode. It has "<<node.inode->hardLinks<<" hardLinks"<<endl;
-				// }
-				// printNode(node);
-
 				if(ret) {
 					copyFile((*s_it).name.c_str(), rootSourceName.c_str(), rootDestName.c_str());
 					// printf("copy complete. File-node details: ");
@@ -377,25 +375,22 @@ bool NameLinksToInodeNumber(string name, Inode* inode){
 void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot) {
     cout<<"IN_ATTRIB HANDLER"<<endl;
     char modFilePath[512];
-//    strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
-    tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modifiedFileName, sourceTree);
-    tree<Node>::pre_order_iterator backupNode = findNodeByName(modifiedFileName, backupTree);
+    strcpy(modFilePath, modifiedFileName);
+    tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
+    tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
     if(modifiedNode == nullptr || backupNode == nullptr){
         cout<<"Node is not at root level, checking deep"<<endl;
         strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
-	cout<<"LOOKING FOR "<<modFilePath<<endl;
-        tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
-        tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
+        modifiedNode = findNodeByName(modFilePath, sourceTree);
+        backupNode = findNodeByName(modFilePath, backupTree);
         if(modifiedNode == nullptr || backupNode == nullptr){
             cout<<"We exit disgracefully";
             exit(1);
         } else{
-            cout<<"Found it"<<endl;
+            cout<<"Found it. Nodes: "<<(*modifiedNode).name<<" and "<<(*backupNode).name<<endl;
         }
 
     }
-
-
 
     if(isDirectory((*modifiedNode))){
         cout<<"Call was to a directory, we do nothing"<<endl;
@@ -423,8 +418,69 @@ void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
 	cout<<"Modification times did not differ, we do nothing"<<endl;
 }
 
-void handleIN_CREATE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot){
+void handleIN_CREATE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot){
+    // IN_CREATE event is created when there's a new file. So we need to take care of this new file accordingly.
     cout<<"IN_CREATE HANDLER"<<endl;
+    int ret;
+    string nameOfParent = (*it).name;
+    char modFilePath[512];
+    Node createdNode;
+    Node createdBackupNode;
+    Inode* inode = new Inode;
+    Inode* backupInode = new Inode;
+    createdNode = {"", .inode = inode};
+    createdBackupNode = {"", .inode = backupInode};
+    tree<Node>::pre_order_iterator backupParent = findNodeByName((*it).name, backupTree);
+    if(backupParent == nullptr){
+        cout<<"You actually failed a sanity check, well done"<<endl;
+        exit(1);
+    }
+    else{
+        cout<<"Sanity check passed, phew"<<endl;
+    }
+    if((*it).name.c_str() == sourceRoot){
+        createdNode.name = modifiedFileName;
+        createdBackupNode.name = modifiedFileName;
+    }
+    else{
+        createdNode.name = getRelativePath(modifiedFileName, (*it).name.c_str());
+        createdBackupNode.name = getRelativePath(modifiedFileName, (*backupParent).name.c_str());
+    }
+    cout<<"created node with name: "<<createdNode.name<<endl;
+    if (stat(getRelativePath(createdNode.name.c_str(), sourceRoot), &(createdNode.inode->statbuf)) == -1) {
+        perror("Failed to get file status");
+        exit(1);
+    }
+    Inode *existing = existingInode(sourceTree, createdNode.inode->statbuf.st_ino);
+    // !NameLinksToInodeNumber(getRelativePath(name, root), existing)
+    if(existing != nullptr ) {
+        cout<<"Already existing Inode for this file: "<<existing->linkedFiles[0]<<". Linking to it..."<<endl;
+        createdNode.inode = existing;
+        createdNode.inode->linkedFiles[createdNode.inode->hardLinks] = createdNode.name;
+        createdNode.inode->hardLinks++;
+    } else{
+        createdNode.inode->hardLinks = 1;
+        createdNode.inode->linkedFiles[0] = createdNode.name;
+        cout<<"Had to make a new inode. It has "<<createdNode.inode->hardLinks<<" hardLinks"<<endl;
+    }
+    sourceTree->append_child(it, createdNode);
+    ret = linkIfInodeExists(createdNode, backupTree, &createdBackupNode);
+    if(ret) {
+        copyFile(createdNode.name.c_str(), sourceRoot, backupRoot);
+        // printf("copy complete. File-node details: ");
+        strcpy(modFilePath,getRelativePath(createdBackupNode.name.c_str(), backupRoot));
+        if(stat(modFilePath, &(createdBackupNode.inode->statbuf)) == -1){
+            perror("Failed to get file status");
+            exit(1);
+        }
+
+        createdBackupNode.inode->hardLinks = 1;
+        createdBackupNode.inode->linkedFiles[0] = getRelativePath(createdNode.name.c_str(), sourceRoot);
+        cout<<"Created new inode. It has "<<createdBackupNode.inode->hardLinks<<" hardLinks"<<endl;
+    }
+
+    backupTree->append_child(backupParent, createdBackupNode);
+
     // If isDirectory, create a new directory; add a node to the tree for this directory; add the directory to the list of watched objects by inotify
     // Implement the same logic as up in syncfolders to deal with inode stuff
 }
@@ -437,8 +493,8 @@ void handleIN_MODIFY(tree<Node>::pre_order_iterator it, tree<Node> *sourceTree, 
     if(modifiedNode == nullptr){
         cout<<"Node is not at root level, checking deep"<<endl;
         strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
-	cout<<"Searching for the node"<<modFilePath<<endl;
-        tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
+	    cout<<"Searching for the node"<<modFilePath<<endl;
+         modifiedNode = findNodeByName(modFilePath, sourceTree);
             if(modifiedNode == nullptr) {
                 cout << "We exit disgracefully";
                 exit(1);
@@ -448,7 +504,6 @@ void handleIN_MODIFY(tree<Node>::pre_order_iterator it, tree<Node> *sourceTree, 
 //        cout<<"Call was to a directory, we do nothing"<<endl;
 //        return;
 //    }
-    cout<<" mark 2."<<endl;
     cout<<"Handled IN_MODIFY. Flag set to true and changes will be saved on IN_CLOSE_WRITE"<<endl;
     (*modifiedNode).inode->unsaved_changes = true;
     cout<<(*modifiedNode).inode->unsaved_changes<<endl;
@@ -464,8 +519,8 @@ void handleIN_CLOSE_WRITE(tree<Node>::pre_order_iterator it, tree<Node> *backupT
     if(modifiedNode == nullptr || backupNode == nullptr){
         cout<<"Node is not at root level, checking deep"<<endl;
         strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
-        tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
-        tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
+        modifiedNode = findNodeByName(modFilePath, sourceTree);
+        backupNode = findNodeByName(modFilePath, backupTree);
         if(modifiedNode == nullptr || backupNode == nullptr){
             cout<<"We exit disgracefully";
             exit(1);

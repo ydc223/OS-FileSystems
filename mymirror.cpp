@@ -151,7 +151,7 @@ static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pr
       if (i->mask & IN_ATTRIB)      /*printf("IN_ATTRIB ");*/       handleIN_ATTRIB(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot);
 //    if (i->mask & IN_CLOSE_NOWRITE) printf("IN_CLOSE_NOWRITE ");
     if (i->mask & IN_CLOSE_WRITE)   /*printf("IN_CLOSE_WRITE ");*/  handleIN_CLOSE_WRITE(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot, backupRoot);
-    if (i->mask & IN_CREATE)        /*printf("IN_CREATE ");*/       handleIN_CREATE(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot);
+    if (i->mask & IN_CREATE)        /*printf("IN_CREATE ");*/       handleIN_CREATE(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot,  backupRoot);
     if (i->mask & IN_DELETE)        printf("IN_DELETE ");
     if (i->mask & IN_DELETE_SELF)   printf("IN_DELETE_SELF ");
 //    if (i->mask & IN_IGNORED)       printf("IN_IGNORED ");
