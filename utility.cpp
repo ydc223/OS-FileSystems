@@ -329,7 +329,7 @@ void copyFile(const char* path, const char* source, const char* backup){
 	char* copyTo = (char*)malloc(sizeof(char)*512);
 	strcpy(copyFrom, getRelativePath(path, source));
 	strcpy(copyTo, getRelativePath(path, backup));
-	//cout<< "File read: "<<copyFrom<<", file write: "<<copyTo<<endl;
+	cout<< "File read: "<<copyFrom<<", file write: "<<copyTo<<endl;
 	
 	char buffer[4096];
 	size_t bytes;
@@ -378,11 +378,12 @@ void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
     cout<<"IN_ATTRIB HANDLER"<<endl;
     char modFilePath[512];
 //    strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
-    tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
-    tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
+    tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modifiedFileName, sourceTree);
+    tree<Node>::pre_order_iterator backupNode = findNodeByName(modifiedFileName, backupTree);
     if(modifiedNode == nullptr || backupNode == nullptr){
         cout<<"Node is not at root level, checking deep"<<endl;
         strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
+	cout<<"LOOKING FOR "<<modFilePath<<endl;
         tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
         tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
         if(modifiedNode == nullptr || backupNode == nullptr){
@@ -432,10 +433,11 @@ void handleIN_MODIFY(tree<Node>::pre_order_iterator it, tree<Node> *sourceTree, 
 	cout<<"IN_MODIFY HANDLER"<<endl;
     char modFilePath[512];
 //    strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
-    tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
+    tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modifiedFileName, sourceTree);
     if(modifiedNode == nullptr){
         cout<<"Node is not at root level, checking deep"<<endl;
         strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
+	cout<<"Searching for the node"<<modFilePath<<endl;
         tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
             if(modifiedNode == nullptr) {
                 cout << "We exit disgracefully";
@@ -454,9 +456,9 @@ void handleIN_MODIFY(tree<Node>::pre_order_iterator it, tree<Node> *sourceTree, 
 }
 
 void handleIN_CLOSE_WRITE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot){
-	cout<<"IN_CLOSE_WRITE HANDLER"<<endl;
+    cout<<"IN_CLOSE_WRITE HANDLER"<<endl;
     char modFilePath[512];
-//    strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
+    strcpy(modFilePath, modifiedFileName);
     tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
     tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
     if(modifiedNode == nullptr || backupNode == nullptr){
@@ -468,15 +470,19 @@ void handleIN_CLOSE_WRITE(tree<Node>::pre_order_iterator it, tree<Node> *backupT
             cout<<"We exit disgracefully";
             exit(1);
         } else{
-            cout<<"Found it"<<endl;
+	  cout<<"Found it. Nodes: "<<(*modifiedNode).name<<" and "<<(*backupNode).name<<endl;
         }
 
     }
-    if(isDirectory((*modifiedNode))){
-        cout<<"Call was to a directory, we do nothing"<<endl;
-        return;
+    
+    //if(isDirectory((*modifiedNode))){
+      //cout<<"Call was to a directory, we do nothing"<<endl;
+        //return;
+	//}
+    if((*modifiedNode).inode == nullptr){
+      cout<<"WHY IS THIS A NULLPTR???"<<endl;
+      return;
     }
-
     if((*modifiedNode).inode->unsaved_changes){
         copyFile(modFilePath, sourceRoot, backupRoot);
         (*modifiedNode).inode->unsaved_changes = false;
