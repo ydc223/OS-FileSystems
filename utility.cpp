@@ -336,7 +336,7 @@ void copyFile(const char* path, const char* source, const char* backup){
 	FILE *readFrom = fopen(copyFrom,"r");
 	FILE *writeTo = fopen(copyTo, "w");
 	if(readFrom == NULL || writeTo == NULL){
-	  //cout<<"Opening File Pointers Failed"<<endl;
+	  cout<<"Opening File Pointers Failed"<<endl;
 		return;
 	}
 
@@ -376,9 +376,7 @@ bool NameLinksToInodeNumber(string name, Inode* inode){
 
 void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot) {
     char modFilePath[512];
-//    cout<<"Call is on "<<it->name<<" and "<<modifiedFileName<<endl;
     strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
-//    cout<<"Modfilepath: "<<modFilePath<<endl;
     tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
     tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
     if(isDirectory((*modifiedNode))){
@@ -414,3 +412,47 @@ void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
 	cout<<"Modification times did not differ, we do nothing"<<endl;
 }
 
+void handleIN_CREATE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot){
+    // If isDirectory, create a new directory; add a node to the tree for this directory; add the directory to the list of watched objects by inotify
+    // Implement the same logic as up in syncfolders to deal with inode stuff
+}
+
+void handleIN_MODIFY(tree<Node>::pre_order_iterator it, tree<Node> *sourceTree, char* modifiedFileName){
+    char modFilePath[512];
+    strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
+    tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
+    if(modifiedNode == nullptr){
+        cout<<"We exit disgracefully";
+        exit(1);
+    }
+    if(isDirectory((*modifiedNode))){
+        cout<<"Call was to a directory, we do nothing"<<endl;
+        return;
+    }
+    cout<<"Handled IN_MODIFY. Flag set to true and changes will be saved on IN_CLOSE_WRITE"<<endl;
+    (*modifiedNode).inode->unsaved_changes = true;
+}
+
+void handleIN_CLOSE_WRITE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot){
+    char modFilePath[512];
+    strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
+    tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
+    tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
+    if(modifiedNode == nullptr || backupNode == nullptr){
+        cout<<"We exit disgracefully";
+        exit(1);
+    }
+    if(isDirectory((*modifiedNode))){
+        cout<<"Call was to a directory, we do nothing"<<endl;
+        return;
+    }
+
+    if((*modifiedNode).inode->unsaved_changes){
+        copyFile(modFilePath, sourceRoot, backupRoot);
+        (*modifiedNode).inode->unsaved_changes = false;
+        cout<<"Unsaved changes were detected and saved"<<endl;
+    }
+    else{
+        cout<<"No unsaved changes"<<endl;
+    }
+}
