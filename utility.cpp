@@ -376,9 +376,9 @@ bool NameLinksToInodeNumber(string name, Inode* inode){
 
 void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot) {
     char modFilePath[512];
-    cout<<"Call is on "<<it->name<<" and "<<modifiedFileName<<endl;
+//    cout<<"Call is on "<<it->name<<" and "<<modifiedFileName<<endl;
     strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
-    cout<<"Modfilepath: "<<modFilePath<<endl;
+//    cout<<"Modfilepath: "<<modFilePath<<endl;
     tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
     tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
     if(isDirectory((*modifiedNode))){
@@ -399,13 +399,12 @@ void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
 	    cout<<"We exit disgracefully";
         exit(1);
 	}
-    cout<<"got here"<<endl;
+
 	if(stat(modFilePath, &(*modifiedNode).inode->statbuf) == -1){
 	    perror("Failed to statbuf");
 	    exit(1);
 	}
-//	cout<<"name of *it node:"<<(*it).name<<endl;
-    cout<<"got here too"<<endl;
+
 
     if((*backupNode).inode->statbuf.st_mtim.tv_sec < (*modifiedNode).inode->statbuf.st_mtim.tv_sec){
 		cout<<"Time of last modification is more recent in source. Updating in backup..."<<endl;
