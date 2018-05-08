@@ -378,12 +378,17 @@ void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree) 
 
 	/*Get the statbuf of the node passed in. Take that statbuf's last-modified date and put it into the statbuf of the corresponding node in backup*/
 	auto lastModDate = (*it).inode->statbuf.st_mtim;
+	cout<<"name of *it node:"<<(*it).name<<endl;
 	tree<Node>::pre_order_iterator backupNode = findNodeByName((*it).name, backupTree);
+	cout<<"Also got here..."<<endl;
 	/*If the times are counting up from 01/01/1970, then whicever one has the higher tv_sec happened later.
 	 * So if node in Source was modified later, we update the last-modification-time into the node in backup*/
 	if((*backupNode).inode->statbuf.st_mtim.tv_sec < lastModDate.tv_sec){
 		cout<<"Time of last modification is more recent in source. Updating in backup..."<<endl;
 		(*backupNode).inode->statbuf.st_mtim.tv_sec = lastModDate.tv_sec;
+		return;
 	}
+	cout<<"ayy lmao?"<<endl;
+	return;
 }
 
