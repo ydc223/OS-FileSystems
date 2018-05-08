@@ -134,22 +134,31 @@ int main(int argc, char *argv[])
        /* Process all of the events in buffer returned by read() */
        for (p = buf; p < buf + numRead; ) {
            event = (struct inotify_event *) p;
-
+            // since the MOVED FROM and TO events have some special cases about order, we handle them first
            if (event->mask & IN_MOVED_FROM) {
-                // is next event after IN_MOVED_FROM an IN_MOVED_TO?
+                mInfo.lastEventWasMOVEDFROM = true;
+                printf("IN_MOVED_FROM handler. Making a note of cookie and waiting for next event");
+                mInfo.cookie = event->cookie;
                 event2 = (struct inotify_event *) p;
-                if(event2->mask * IN_MOVED_TO) {
+               // is next event after IN_MOVED_FROM an IN_MOVED_TO?
+                if(event2->mask & IN_MOVED_TO) {
+                    mInfo.lastEventWasMOVEDFROM = false;
                     // handle IN_MOVED_TO
-                    printf("IN_MOVED_FROM handler\n");
-                    mInfo->lastEventWasMOVEDFROM = true;
-                    mInfo->cookie = i->cookie;
-                    printf("We are just renaming\n");
+                    if(event2->cookie == mInfo.cookie){
+                        printf("IN_MOVED_TO after IN_MOVED_FROM handler\n");
+                        printf("We are just renaming\n");
+                    } else{
+                        // from the spec, "act as in IN_CREATE"
+                        handleIN_CREATE(watchDescriptors[event2->wd], &destinationTree, &sourceTree, event2->name, source,  backup);
+                    }
                 } else{
                     // unlink the file in question
-                    printf("Moving the file elsewhere\n");
+                    printf("IN_MOVED_FROM that is not followed by IN_MOVED_TO. Simply unlink the file in question\n We do this by handling as if it was an IN_DELETE\n");
+                    handleIN_DELETE(watchDescriptors[event->wd], &destinationTree, &sourceTree, event->name, source, backup);
                 }
 
            } else {
+               // if it wasn't one of our special events we can just handle them regularly
                 handleInotifyEvents(event, watchDescriptors, &destinationTree, &sourceTree, source, backup, &mInfo);
            }
 
@@ -157,7 +166,6 @@ int main(int argc, char *argv[])
        }
    }
 
-	return 0;
 }
 
 static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pre_order_iterator> watchDescriptors, tree<Node>* destinationTree, tree<Node>* sourceTree, char* sourceRoot, char* backupRoot, struct MOVEEventInfo *mInfo) {
@@ -189,18 +197,14 @@ static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pr
         handleIN_MODIFY(watchDescriptors[i->wd], sourceTree, i->name);
         mInfo->lastEventWasMOVEDFROM = false;
     }
-    if (i->mask & IN_MOVED_FROM){
-        printf("IN_MOVED_FROM handler\n");
-        mInfo->lastEventWasMOVEDFROM = true;
-        mInfo->cookie = i->cookie;
-    }
+//    if (i->mask & IN_MOVED_FROM){
+//        printf("IN_MOVED_FROM handler\n");
+//        mInfo->lastEventWasMOVEDFROM = true;
+//        mInfo->cookie = i->cookie;
+//    }
     if (i->mask & IN_MOVED_TO){
         printf("IN_MOVED_TO handler\n");
-        if(mInfo->lastEventWasMOVEDFROM){
-            if(mInfo->cookie == i->cookie){
-                //Move the name respectively to the target cookie
-            }
-        } else{
+        if(!mInfo->lastEventWasMOVEDFROM){
             // from the spec, "act as in IN_CREATE"
             handleIN_CREATE(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot,  backupRoot);
         }
