@@ -540,7 +540,6 @@ void handleIN_CLOSE_WRITE(tree<Node>::pre_order_iterator it, tree<Node> *backupT
         }
 
     }
-    
     //if(isDirectory((*modifiedNode))){
       //cout<<"Call was to a directory, we do nothing"<<endl;
         //return;
@@ -556,5 +555,38 @@ void handleIN_CLOSE_WRITE(tree<Node>::pre_order_iterator it, tree<Node> *backupT
     }
     else{
         cout<<"No unsaved changes"<<endl;
+    }
+}
+
+void handleIN_DELETE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot){
+    cout<<"Handling IN_DELETE...";
+    char modFilePath[512];
+    strcpy(modFilePath, modifiedFileName);
+    tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
+    tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
+    if(modifiedNode == nullptr || backupNode == nullptr){
+        cout<<"Node is not at root level, checking deep"<<endl;
+        strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
+        modifiedNode = findNodeByName(modFilePath, sourceTree);
+        backupNode = findNodeByName(modFilePath, backupTree);
+        if(modifiedNode == nullptr || backupNode == nullptr){
+            cout<<"We exit disgracefully";
+            exit(1);
+        } else{
+            cout<<"Found it. Nodes: "<<(*modifiedNode).name<<" and "<<(*backupNode).name<<endl;
+        }
+
+    }
+    if(isDirectory((*modifiedNode))){
+        cout<<"Call was to a directory, we do rmdir to "<<getRelativePath((*modifiedNode).name.c_str(), sourceRoot)<<endl;
+        (*sourceTree).erase(modifiedNode);
+        (*backupTree).erase(backupNode);
+        return;
+    }
+    else{
+        cout<<"Call was to a file, we unlink the file "<<getRelativePath((*modifiedNode).name.c_str(), sourceRoot)<<endl;
+        (*sourceTree).erase(modifiedNode);
+        (*backupTree).erase(backupNode);
+        return;
     }
 }
