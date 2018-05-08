@@ -39,12 +39,12 @@ void printNode(struct Node node){
 }
 
 char* getRelativePath(const char* name, const char* rootFolder){
-	char *relatvePath = (char*)malloc(sizeof(char)*100);
-	memset(relatvePath,0,strlen(relatvePath));
-	strcpy(relatvePath, rootFolder);
-	strcat(relatvePath, "/");
-	strcat(relatvePath, name);
-	return relatvePath;
+	char *relativePath = (char*)malloc(sizeof(char)*100);
+	memset(relativePath,0,strlen(relativePath));
+	strcpy(relativePath, rootFolder);
+	strcat(relativePath, "/");
+	strcat(relativePath, name);
+	return relativePath;
 }
 
 map<int, tree<Node>::pre_order_iterator> assignWatchers(tree<Node>* sourceTree, int inotifyFd) {
@@ -145,13 +145,13 @@ void makeDirectoryTree(char* dir_path, char* root, tree<Node> * dirTree, tree<No
 				Inode *existing = existingInode(dirTree, node.inode->statbuf.st_ino);
 				// !NameLinksToInodeNumber(getRelativePath(name, root), existing)
 				if(existing != nullptr ) {
-					cout<<"Already existing Inode for this file: "<<existing->linked_files[0]<<". Linking to it..."<<endl;
+					cout<<"Already existing Inode for this file: "<<existing->linkedFiles[0]<<". Linking to it..."<<endl;
 					node.inode = existing; 
-					node.inode->linked_files[node.inode->hardLinks] = name;
+					node.inode->linkedFiles[node.inode->hardLinks] = name;
 					node.inode->hardLinks++;
 				} else{
 					node.inode->hardLinks = 1;
-					node.inode->linked_files[0] = name;
+					node.inode->linkedFiles[0] = name;
 					cout<<"Had to make a new inode. It has "<<node.inode->hardLinks<<" hardLinks"<<endl;
 				}
 
@@ -201,12 +201,12 @@ int linkIfInodeExists(Node sourceNode, tree<Node>* backup, Node* backupNode) {
 
 	for (int i = 0; i < sourceNode.inode->hardLinks; ++i)
 	{
-		if (sourceNode.inode->linked_files[i] != sourceNode.name) {
-			found = findNodeByName(sourceNode.inode->linked_files[i], backup);
+		if (sourceNode.inode->linkedFiles[i] != sourceNode.name) {
+			found = findNodeByName(sourceNode.inode->linkedFiles[i], backup);
 			if(found != nullptr) {
-				printf("Found a link with %s name, which is %u\n", sourceNode.inode->linked_files[i].c_str(), (*found).inode->statbuf.st_ino);
+				printf("Found a link with %s name, which is %u\n", sourceNode.inode->linkedFiles[i].c_str(), (*found).inode->statbuf.st_ino);
 				link(getRelativePath((*found).name.c_str(), backupName.c_str()), getRelativePath(sourceNode.name.c_str(), backupName.c_str()));
-				(*found).inode->linked_files[(*found).inode->hardLinks] = backupNode->name;
+				(*found).inode->linkedFiles[(*found).inode->hardLinks] = backupNode->name;
 				(*found).inode->hardLinks++;
 				backupNode->inode = (*found).inode;
 				return 0;
@@ -269,8 +269,6 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 			if(isDirectory(*s_it)) {
 				//Make directory
 				// printf("Naame: %s Root: %s\n", (*s_it).name.c_str(), rootDestName.c_str());
-				//printf("TODO make a directory at %s\n", getRelativePath((*s_it).name.c_str(), rootDestName.c_str()));
-				// printf("TODO Insert node with append child to currentParent\n");
 				dir_path = getRelativePath((*s_it).name.c_str(), rootDestName.c_str());
 				// printf("MAKING DIRECTOTY AT: %s\n", dir_path);
 				mkdir(dir_path, ACCESSPERMS);
@@ -279,7 +277,6 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 					exit(1);
 				}
 			} else {
-				//TODO: Create a file, copy the content, assign the stat of the new file to stat struct
 			        // printf("Creating copy of file in backup %s at %s...", (*s_it).name.c_str(), rootDestName.c_str());
 				
 				
@@ -291,11 +288,11 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 				// if() {
 				// 	cout<<"Already existing Inode for this file. Storing info in Inode..."<<endl;
 				// 	node.inode = existing; 
-				// 	node.inode->linked_files[node.inode->hardLinks] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
+				// 	node.inode->linkedFiles[node.inode->hardLinks] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
 				// 	node.inode->hardLinks++;
 				// } else {
 				// 	node.inode->hardLinks = 1;
-				// 	node.inode->linked_files[0] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
+				// 	node.inode->linkedFiles[0] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
 				// 	cout<<"Created new inode. It has "<<node.inode->hardLinks<<" hardLinks"<<endl;
 				// }
 				// printNode(node);
@@ -310,7 +307,7 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 					}
 
 					node.inode->hardLinks = 1;
-					node.inode->linked_files[0] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
+					node.inode->linkedFiles[0] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
 					cout<<"Created new inode. It has "<<node.inode->hardLinks<<" hardLinks"<<endl;
 				}
 			}
@@ -356,7 +353,7 @@ Inode* existingInode(tree<Node>* sourceTree, ino_t inode_number){
 
 	while(it!=end) {
 		if((*it).inode->statbuf.st_ino == inode_number){
-			cout<<"EXISTING INODE SAY TRUE"<<(*it).inode->linked_files[0]<<endl;
+			cout<<"EXISTING INODE SAY TRUE"<<(*it).inode->linkedFiles[0]<<endl;
 			return (*it).inode;
 		}
 		// printNode(*it); 
@@ -369,9 +366,24 @@ Inode* existingInode(tree<Node>* sourceTree, ino_t inode_number){
 bool NameLinksToInodeNumber(string name, Inode* inode){
 	int links = inode->hardLinks;
 	for(int i = 0; i < links; i++){
-		if(inode->linked_files[i] == name){
+		if(inode->linkedFiles[i] == name){
 			return true;
 		}
 	}
 	return false;
 }
+
+void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree) {
+	cout<<"Handling IN_ATTRIB call which happened on file "<<(*it).name<<" in the source folder"<<endl;
+
+	/*Get the statbuf of the node passed in. Take that statbuf's last-modified date and put it into the statbuf of the corresponding node in backup*/
+	auto lastModDate = (*it).inode->statbuf.st_mtim;
+	tree<Node>::pre_order_iterator backupNode = findNodeByName((*it).name, backupTree);
+	/*If the times are counting up from 01/01/1970, then whicever one has the higher tv_sec happened later.
+	 * So if node in Source was modified later, we update the last-modification-time into the node in backup*/
+	if((*backupNode).inode->statbuf.st_mtim.tv_sec < lastModDate.tv_sec){
+		cout<<"Time of last modification is more recent in source. Updating in backup..."<<endl;
+		(*backupNode).inode->statbuf.st_mtim.tv_sec = lastModDate.tv_sec;
+	}
+}
+

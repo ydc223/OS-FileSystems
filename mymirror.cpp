@@ -13,8 +13,10 @@
 #define MAX_INODES 1024
 // #include "tlpi_hdr.h"
 
-/* Display information from inotify_event structure */
-static void displayInotifyEvent(struct inotify_event *i, map<int, tree<Node>::pre_order_iterator> );
+/* Display information from inotify_event structure and call the appropriate handler*/
+static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pre_order_iterator>);
+
+
 
 #define BUF_LEN (10 * (sizeof(struct inotify_event) + NAME_MAX + 1))
 
@@ -130,7 +132,7 @@ int main(int argc, char *argv[])
        /* Process all of the events in buffer returned by read() */
        for (p = buf; p < buf + numRead; ) {
            event = (struct inotify_event *) p;
-           displayInotifyEvent(event, watchDescriptors);
+           handleInotifyEvents(event, watchDescriptors, &destinationTree);
            p += sizeof(struct inotify_event) + event->len;
        }
    }
@@ -138,14 +140,14 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-static void displayInotifyEvent(struct inotify_event *i, map<int, tree<Node>::pre_order_iterator> watchDescriptors) {
+static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pre_order_iterator> watchDescriptors, tree<Node>* destinationTree) {
 
     printf("wd =%2d; ", i->wd);
     if (i->cookie > 0)
         printf("cookie =%4d; ", i->cookie);
 
     printf("mask = ");
-    if (i->mask & IN_ACCESS)        printf("IN_ACCESS ");
+    if (i->mask & IN_ACCESS)        /*printf("IN_ACCESS ");*/ handleIN_ATTRIB(watchDescriptors[i->wd], destinationTree);
     if (i->mask & IN_ATTRIB)        printf("IN_ATTRIB ");
     if (i->mask & IN_CLOSE_NOWRITE) printf("IN_CLOSE_NOWRITE ");
     if (i->mask & IN_CLOSE_WRITE)   printf("IN_CLOSE_WRITE ");
@@ -166,6 +168,7 @@ static void displayInotifyEvent(struct inotify_event *i, map<int, tree<Node>::pr
     if (i->len > 0)
         printf("        name = %s\n", i->name);
 }
+
 
 
 

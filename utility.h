@@ -31,18 +31,25 @@ void printNode(struct Node node);
 static void displayInotifyEvent(struct inotify_event *i);
 void traverseDir(char *);
 void makeDirectoryTree(char* dir_path, char* root, tree<Node> * dirTree, tree<Node>::pre_order_iterator it, tree<Node>::pre_order_iterator newIt);
-tree<Node>::pre_order_iterator findInodeByNum(ino_t inode_number, tree<Node> searchTree);
+tree<Node>::pre_order_iterator findInodeByNum(ino_t inode_number, tree<Node> *searchTree);
 tree<Node>::pre_order_iterator findNodeByName(string name, tree<Node> *searchTree);
 void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree);
 bool isDirectory(struct Node node);
 void copyFile(const char* path, const char* source, const char* backup);
 map<int, tree<Node>::pre_order_iterator> assignWatchers(tree<Node>* sourceTree, int inotifyFd);
-
+void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree);
+void handleIN_CREATE();
+void handleIN_MODIFY();
+void handleIN_CLOSE_WRITE();
+void handleIN_DELETE();
+void handleIN_DELETE_SELF();
+void handleIN_MOVED_FROM();
+void handleIN_MOVED_TO();
 
 
 typedef struct Inode {
 	struct stat statbuf;
-    string linked_files[MAX_HARDLINKS];
+    string linkedFiles[MAX_HARDLINKS];
 	int hardLinks;
 	bool unsaved_changes;
 } Inode;
