@@ -430,7 +430,13 @@ void handleIN_CREATE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
     Inode* backupInode = new Inode;
     createdNode = {"", .inode = inode};
     createdBackupNode = {"", .inode = backupInode};
-    tree<Node>::pre_order_iterator backupParent = findNodeByName((*it).name, backupTree);
+    tree<Node>::pre_order_iterator backupParent;
+    if((*it).name == sourceRoot){
+        backupParent = findNodeByName(backupRoot, backupTree);
+    }
+    else{
+        backupParent = findNodeByName((*it).name, backupTree);
+    }
     if(backupParent == nullptr){
         cout<<"You actually failed a sanity check, well done"<<endl;
         exit(1);
@@ -480,7 +486,12 @@ void handleIN_CREATE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
     }
 
     backupTree->append_child(backupParent, createdBackupNode);
-
+    if(findNodeByName(createdBackupNode.name, backupTree) == nullptr ){
+        cout<<"DIDN'T ATTACH TO BACKUP YO"<<endl;
+    }
+    if(findNodeByName(createdNode.name, sourceTree) == nullptr){
+        cout<<"DIDN'T ATTACK TO SOURCE YO"<<endl;
+    }
     // If isDirectory, create a new directory; add a node to the tree for this directory; add the directory to the list of watched objects by inotify
     // Implement the same logic as up in syncfolders to deal with inode stuff
 }
