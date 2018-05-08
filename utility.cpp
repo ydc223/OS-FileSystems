@@ -375,10 +375,27 @@ bool NameLinksToInodeNumber(string name, Inode* inode){
 }
 
 void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot) {
+    cout<<"IN_ATTRIB HANDLER"<<endl;
     char modFilePath[512];
-    strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
+//    strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
     tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
     tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
+    if(modifiedNode == nullptr || backupNode == nullptr){
+        cout<<"Node is not at root level, checking deep"<<endl;
+        strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
+        tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
+        tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
+        if(modifiedNode == nullptr || backupNode == nullptr){
+            cout<<"We exit disgracefully";
+            exit(1);
+        } else{
+            cout<<"Found it"<<endl;
+        }
+
+    }
+
+
+
     if(isDirectory((*modifiedNode))){
         cout<<"Call was to a directory, we do nothing"<<endl;
         return;
@@ -390,13 +407,6 @@ void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
 
 	/*Call statbuf again on the node that was passed in, as we know it has a new time of modification.
 	 * Take that statbuf's last-modified date and put it into the statbuf of the corresponding node in backup if bigger*/
-//	cout<<getRelativePath(modifiedFileName, sourceRoot)<<endl;
-
-
-	if(modifiedNode == nullptr || backupNode == nullptr){
-	    cout<<"We exit disgracefully";
-        exit(1);
-	}
 
 	if(stat(modFilePath, &(*modifiedNode).inode->statbuf) == -1){
 	    perror("Failed to statbuf");
@@ -413,34 +423,54 @@ void handleIN_ATTRIB(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
 }
 
 void handleIN_CREATE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot){
+    cout<<"IN_CREATE HANDLER"<<endl;
     // If isDirectory, create a new directory; add a node to the tree for this directory; add the directory to the list of watched objects by inotify
     // Implement the same logic as up in syncfolders to deal with inode stuff
 }
 
 void handleIN_MODIFY(tree<Node>::pre_order_iterator it, tree<Node> *sourceTree, char* modifiedFileName){
+	cout<<"IN_MODIFY HANDLER"<<endl;
     char modFilePath[512];
-    strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
+//    strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
     tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
     if(modifiedNode == nullptr){
-        cout<<"We exit disgracefully";
-        exit(1);
+        cout<<"Node is not at root level, checking deep"<<endl;
+        strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
+        tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
+            if(modifiedNode == nullptr) {
+                cout << "We exit disgracefully";
+                exit(1);
+            }
     }
-    if(isDirectory((*modifiedNode))){
-        cout<<"Call was to a directory, we do nothing"<<endl;
-        return;
-    }
+//    if(isDirectory((*modifiedNode))){
+//        cout<<"Call was to a directory, we do nothing"<<endl;
+//        return;
+//    }
+    cout<<" mark 2."<<endl;
     cout<<"Handled IN_MODIFY. Flag set to true and changes will be saved on IN_CLOSE_WRITE"<<endl;
     (*modifiedNode).inode->unsaved_changes = true;
+    cout<<(*modifiedNode).inode->unsaved_changes<<endl;
+    return;
 }
 
 void handleIN_CLOSE_WRITE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot){
+	cout<<"IN_CLOSE_WRITE HANDLER"<<endl;
     char modFilePath[512];
-    strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
+//    strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
     tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
     tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
     if(modifiedNode == nullptr || backupNode == nullptr){
-        cout<<"We exit disgracefully";
-        exit(1);
+        cout<<"Node is not at root level, checking deep"<<endl;
+        strcpy(modFilePath, getRelativePath(modifiedFileName, (*it).name.c_str()));
+        tree<Node>::pre_order_iterator modifiedNode = findNodeByName(modFilePath, sourceTree);
+        tree<Node>::pre_order_iterator backupNode = findNodeByName(modFilePath, backupTree);
+        if(modifiedNode == nullptr || backupNode == nullptr){
+            cout<<"We exit disgracefully";
+            exit(1);
+        } else{
+            cout<<"Found it"<<endl;
+        }
+
     }
     if(isDirectory((*modifiedNode))){
         cout<<"Call was to a directory, we do nothing"<<endl;
