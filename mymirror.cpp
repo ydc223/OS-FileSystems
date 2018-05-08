@@ -27,6 +27,7 @@ int main(int argc, char *argv[])
     ssize_t numRead;
     char *p;
     struct inotify_event *event;
+    struct inotify_event *event2;
     char *backup;
     char root[100];
     char *source;
@@ -133,7 +134,25 @@ int main(int argc, char *argv[])
        /* Process all of the events in buffer returned by read() */
        for (p = buf; p < buf + numRead; ) {
            event = (struct inotify_event *) p;
-           handleInotifyEvents(event, watchDescriptors, &destinationTree, &sourceTree, source, backup, &mInfo);
+
+           if (event->mask & IN_MOVED_FROM) {
+                // is next event after IN_MOVED_FROM an IN_MOVED_TO?
+                event2 = (struct inotify_event *) p;
+                if(event2->mask * IN_MOVED_TO) {
+                    // handle IN_MOVED_TO
+                    printf("IN_MOVED_FROM handler\n");
+                    mInfo->lastEventWasMOVEDFROM = true;
+                    mInfo->cookie = i->cookie;
+                    printf("We are just renaming\n");
+                } else{
+                    // unlink the file in question
+                    printf("Moving the file elsewhere\n");
+                }
+
+           } else {
+                handleInotifyEvents(event, watchDescriptors, &destinationTree, &sourceTree, source, backup, &mInfo);
+           }
+
            p += sizeof(struct inotify_event) + event->len;
        }
    }

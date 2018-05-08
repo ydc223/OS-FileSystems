@@ -278,23 +278,6 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 					exit(1);
 				}
 			} else {
-			        // printf("Creating copy of file in backup %s at %s...", (*s_it).name.c_str(), rootDestName.c_str());
-				
-				
-
-				//Does this file we just created have the same inode number as another file in Source?
-				// Inode *existing = existingInode(sourceTree, (*s_it).inode->statbuf.st_ino);
-                // if() {
-                // 	cout<<"Already existing Inode for this file. Storing info in Inode..."<<endl;
-                // 	node.inode = existing;
-                // 	node.inode->linkedFiles[node.inode->hardLinks] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
-                // 	node.inode->hardLinks++;
-                // } else {
-                // 	node.inode->hardLinks = 1;
-                // 	node.inode->linkedFiles[0] = getRelativePath((*s_it).name.c_str(), rootSourceName.c_str());
-                // 	cout<<"Created new inode. It has "<<node.inode->hardLinks<<" hardLinks"<<endl;
-                // }
-                // printNode(node);
 				ret = linkIfInodeExists(*s_it, destinationTree, &node);
 				if(ret) {
 					copyFile((*s_it).name.c_str(), rootSourceName.c_str(), rootDestName.c_str());
@@ -310,11 +293,7 @@ void syncFolders(tree<Node>* sourceTree, tree<Node>* destinationTree) {
 					cout<<"Created new inode. It has "<<node.inode->hardLinks<<" hardLinks"<<endl;
 				}
 			}
-			// printNode(*currentParent);
 			(*destinationTree).append_child(currentParent, node);
-			//printf("CREATED NEW NODE, PRINTING: ");
-			//printNode(*newIt);
-			//printTree(*destinationTree);
 		}
 		++s_it;
 	}
@@ -575,7 +554,6 @@ void handleIN_DELETE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
         } else{
             cout<<"Found it. Nodes: "<<(*modifiedNode).name<<" and "<<(*backupNode).name<<endl;
         }
-
     }
     if(isDirectory((*modifiedNode))){
         cout<<"Call was to a directory, we do rmdir to "<<getRelativePath((*modifiedNode).name.c_str(), backupRoot)<<endl;
@@ -597,4 +575,9 @@ void handleIN_DELETE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
 // i.e. we're doing the "act as in IN_CREATE, moreover copy the data" instruction from the project
 void handleIN_MOVED_TO(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot){
 
+	
+
 }
+
+
+
