@@ -43,8 +43,8 @@ void handleIN_MODIFY(tree<Node>::pre_order_iterator it, tree<Node> *sourceTree, 
 void handleIN_CLOSE_WRITE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot);
 void handleIN_DELETE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot);
 void handleIN_DELETE_SELF(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot);
-void handleIN_MOVED_FROM(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot);
-void handleIN_MOVED_TO(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot);
+//u_int32_t handleIN_MOVED_FROM(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot);
+void handleIN_MOVED_TO(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot);
 
 
 typedef struct Inode {
@@ -58,6 +58,12 @@ typedef struct Node {
 	string name;
 	struct Inode *inode;
 } Node;
+
+typedef struct MOVEEventInfo{
+    bool lastEventWasMOVEDFROM = false;
+    u_int32_t cookie;
+} MOVEEventInfo;
+
 Inode* existingInode(tree<Node>* sourceTree, ino_t inode_number);
 bool NameLinksToInodeNumber(string name, Inode* inode);
 #endif // SORT_H

@@ -14,7 +14,7 @@
 // #include "tlpi_hdr.h"
 
 /* Display information from inotify_event structure and call the appropriate handler*/
-static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pre_order_iterator>, tree<Node>* destinationTree,  tree<Node>* sourceTree, char* sourceRoot, char* backupRoot);
+static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pre_order_iterator>, tree<Node>* destinationTree,  tree<Node>* sourceTree, char* sourceRoot, char* backupRoot, struct MOVEEventInfo *mInfo);
 
 
 
@@ -41,6 +41,7 @@ int main(int argc, char *argv[])
     struct Node node2 = {"", inode2};
     tree<Node>::pre_order_iterator treeIt;
     map<int, tree<Node>::pre_order_iterator>  watchDescriptors;
+    MOVEEventInfo mInfo;
 
 
 
@@ -132,7 +133,7 @@ int main(int argc, char *argv[])
        /* Process all of the events in buffer returned by read() */
        for (p = buf; p < buf + numRead; ) {
            event = (struct inotify_event *) p;
-           handleInotifyEvents(event, watchDescriptors, &destinationTree, &sourceTree, source, backup);
+           handleInotifyEvents(event, watchDescriptors, &destinationTree, &sourceTree, source, backup, &mInfo);
            p += sizeof(struct inotify_event) + event->len;
        }
    }
@@ -140,26 +141,52 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pre_order_iterator> watchDescriptors, tree<Node>* destinationTree, tree<Node>* sourceTree, char* sourceRoot, char* backupRoot) {
-
+static void handleInotifyEvents(struct inotify_event *i, map<int, tree<Node>::pre_order_iterator> watchDescriptors, tree<Node>* destinationTree, tree<Node>* sourceTree, char* sourceRoot, char* backupRoot, struct MOVEEventInfo *mInfo) {
     printf("wd =%2d; ", i->wd);
     if (i->cookie > 0)
         printf("cookie =%4d; ", i->cookie);
 
     printf("mask = ");
-//    if (i->mask & IN_ACCESS)        /*printf("IN_ACCESS ");*/     handleIN_CREATE(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot)
-      if (i->mask & IN_ATTRIB)      /*printf("IN_ATTRIB ");*/       handleIN_ATTRIB(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot);
-//    if (i->mask & IN_CLOSE_NOWRITE) printf("IN_CLOSE_NOWRITE ");
-    if (i->mask & IN_CLOSE_WRITE)   /*printf("IN_CLOSE_WRITE ");*/  handleIN_CLOSE_WRITE(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot, backupRoot);
-    if (i->mask & IN_CREATE)        /*printf("IN_CREATE ");*/       handleIN_CREATE(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot,  backupRoot);
-    if (i->mask & IN_DELETE)        /*printf("IN_DELETE ");*/       handleIN_DELETE(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot, backupRoot);
-    if (i->mask & IN_DELETE_SELF)   printf("IN_DELETE_SELF ");
-//    if (i->mask & IN_IGNORED)       printf("IN_IGNORED ");
-//    if (i->mask & IN_ISDIR)         printf("IN_ISDIR ");
-    if (i->mask & IN_MODIFY)        /*printf("IN_MODIFY ");*/handleIN_MODIFY(watchDescriptors[i->wd], sourceTree, i->name);
-//    if (i->mask & IN_MOVE_SELF)     printf("IN_MOVE_SELF ");
-    if (i->mask & IN_MOVED_FROM)    printf("IN_MOVED_FROM ");
-    if (i->mask & IN_MOVED_TO)      printf("IN_MOVED_TO ");
+    if (i->mask & IN_ATTRIB){
+        handleIN_ATTRIB(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot);
+        mInfo->lastEventWasMOVEDFROM = false;
+    }
+    if (i->mask & IN_CLOSE_WRITE){
+        handleIN_CLOSE_WRITE(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot, backupRoot);
+        mInfo->lastEventWasMOVEDFROM = false;
+    }
+    if (i->mask & IN_CREATE){
+        handleIN_CREATE(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot,  backupRoot);
+        mInfo->lastEventWasMOVEDFROM = false;
+    }
+    if (i->mask & IN_DELETE){
+        handleIN_DELETE(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot, backupRoot);
+        mInfo->lastEventWasMOVEDFROM = false;
+    }
+    if (i->mask & IN_DELETE_SELF){
+        mInfo->lastEventWasMOVEDFROM = false;
+    }
+    if (i->mask & IN_MODIFY){
+        handleIN_MODIFY(watchDescriptors[i->wd], sourceTree, i->name);
+        mInfo->lastEventWasMOVEDFROM = false;
+    }
+    if (i->mask & IN_MOVED_FROM){
+        printf("IN_MOVED_FROM handler\n");
+        mInfo->lastEventWasMOVEDFROM = true;
+        mInfo->cookie = i->cookie;
+    }
+    if (i->mask & IN_MOVED_TO){
+        printf("IN_MOVED_TO handler\n");
+        if(mInfo->lastEventWasMOVEDFROM){
+            if(mInfo->cookie == i->cookie){
+                //Move the name respectively to the target cookie
+            }
+        } else{
+            // from the spec, "act as in IN_CREATE"
+            handleIN_CREATE(watchDescriptors[i->wd], destinationTree, sourceTree, i->name, sourceRoot,  backupRoot);
+        }
+        mInfo->lastEventWasMOVEDFROM = false;
+    }
 //    if (i->mask & IN_OPEN)          printf("IN_OPEN ");
 //    if (i->mask & IN_Q_OVERFLOW)    printf("IN_Q_OVERFLOW ");
 //    if (i->mask & IN_UNMOUNT)       printf("IN_UNMOUNT ");

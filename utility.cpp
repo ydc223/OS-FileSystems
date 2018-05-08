@@ -592,3 +592,9 @@ void handleIN_DELETE(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, 
         return;
     }
 }
+
+// This implementation assumes it is ONLY BEING CALLED in the case where the last event was NOT IN_MOVED_TO.
+// i.e. we're doing the "act as in IN_CREATE, moreover copy the data" instruction from the project
+void handleIN_MOVED_TO(tree<Node>::pre_order_iterator it, tree<Node> *backupTree, tree<Node> *sourceTree, char* modifiedFileName, char* sourceRoot, char* backupRoot){
+
+}
