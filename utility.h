@@ -51,7 +51,7 @@ typedef struct Inode {
 	struct stat statbuf;
     string linkedFiles[MAX_HARDLINKS];
 	int hardLinks;
-	bool unsaved_changes;
+	bool unsaved_changes = false;
 } Inode;
 
 typedef struct Node {
